@@ -159,8 +159,162 @@ if LP.Character then onMe(LP.Character) end
 LP.CharacterAdded:Connect(onMe)
 end
 
+-- ============ TELEPORT GUI ============
+local UIS = game:GetService("UserInputService")
+local tpGui = Instance.new("ScreenGui")
+tpGui.Name = "ESP_TP"
+tpGui.ResetOnSpawn = false
+tpGui.Parent = LP:WaitForChild("PlayerGui")
+
+local tpSuave = false
+local tpSpeed = 100
+local tpMoving = false
+local tpConn = nil
+
+local tpBtn = Instance.new("TextButton")
+tpBtn.Size = UDim2.new(0,40,0,40)
+tpBtn.Position = UDim2.new(0,10,0.5,-20)
+tpBtn.BackgroundColor3 = Color3.fromRGB(30,30,30)
+tpBtn.BackgroundTransparency = 0.3
+tpBtn.TextColor3 = Color3.fromRGB(0,200,255)
+tpBtn.Font = Enum.Font.GothamBold
+tpBtn.TextSize = 18
+tpBtn.Text = "TP"
+tpBtn.Parent = tpGui
+local tpCorner = Instance.new("UICorner")
+tpCorner.CornerRadius = UDim.new(0,8)
+tpCorner.Parent = tpBtn
+
+local modeBtn = Instance.new("TextButton")
+modeBtn.Size = UDim2.new(0,40,0,25)
+modeBtn.Position = UDim2.new(0,10,0.5,25)
+modeBtn.BackgroundColor3 = Color3.fromRGB(30,30,30)
+modeBtn.BackgroundTransparency = 0.3
+modeBtn.TextColor3 = Color3.fromRGB(0,255,100)
+modeBtn.Font = Enum.Font.Gotham
+modeBtn.TextSize = 9
+modeBtn.Text = "INST"
+modeBtn.Parent = tpGui
+local mCorner = Instance.new("UICorner")
+mCorner.CornerRadius = UDim.new(0,6)
+mCorner.Parent = modeBtn
+
+modeBtn.MouseButton1Click:Connect(function()
+tpSuave = not tpSuave
+if tpSuave then
+modeBtn.Text = "SUAVE"
+modeBtn.TextColor3 = Color3.fromRGB(255,200,0)
+else
+if tpMoving and tpConn then tpConn:Disconnect() tpMoving = false end
+modeBtn.Text = "INST"
+modeBtn.TextColor3 = Color3.fromRGB(0,255,100)
+end
+end)
+
+local listFrame = Instance.new("ScrollingFrame")
+listFrame.Size = UDim2.new(0,200,0,300)
+listFrame.Position = UDim2.new(0,60,0.5,-150)
+listFrame.BackgroundColor3 = Color3.fromRGB(20,20,20)
+listFrame.BackgroundTransparency = 0.2
+listFrame.BorderSizePixel = 0
+listFrame.ScrollBarThickness = 4
+listFrame.Visible = false
+listFrame.Parent = tpGui
+local lCorner = Instance.new("UICorner")
+lCorner.CornerRadius = UDim.new(0,8)
+lCorner.Parent = listFrame
+local lLayout = Instance.new("UIListLayout")
+lLayout.Padding = UDim.new(0,3)
+lLayout.SortOrder = Enum.SortOrder.Name
+lLayout.Parent = listFrame
+
+local function refreshList()
+for _, c in pairs(listFrame:GetChildren()) do
+if c:IsA("TextButton") then c:Destroy() end
+end
+for _, p in pairs(Players:GetPlayers()) do
+if p ~= LP then
+local btn = Instance.new("TextButton")
+btn.Size = UDim2.new(1,-6,0,40)
+btn.Position = UDim2.new(0,3,0,0)
+btn.BackgroundColor3 = Color3.fromRGB(40,40,40)
+btn.BackgroundTransparency = 0.3
+btn.TextColor3 = Color3.fromRGB(255,255,255)
+btn.Font = Enum.Font.Gotham
+btn.TextSize = 12
+btn.Text = p.Name
+btn.TextXAlignment = Enum.TextXAlignment.Left
+btn.Parent = listFrame
+local bc = Instance.new("UICorner")
+bc.CornerRadius = UDim.new(0,6)
+bc.Parent = btn
+local avatar = Instance.new("ImageLabel")
+avatar.Size = UDim2.new(0,30,0,30)
+avatar.Position = UDim2.new(0,5,0.5,-15)
+avatar.BackgroundTransparency = 1
+avatar.Image = Players:GetUserThumbnailAsync(p.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size48x48)
+avatar.Parent = btn
+local avCorner = Instance.new("UICorner")
+avCorner.CornerRadius = UDim.new(1,0)
+avCorner.Parent = avatar
+local pad = Instance.new("UIPadding")
+pad.PaddingLeft = UDim.new(0,45)
+pad.Parent = btn
+btn.MouseButton1Click:Connect(function()
+if not p.Character or not p.Character:FindFirstChild("HumanoidRootPart") then return end
+if not LP.Character or not LP.Character:FindFirstChild("HumanoidRootPart") then return end
+local myHRP = LP.Character.HumanoidRootPart
+if tpSuave then
+if tpMoving and tpConn then tpConn:Disconnect() end
+tpMoving = true
+print("[TP] Yendo suave hacia " .. p.Name)
+tpConn = RunService.RenderStepped:Connect(function(dt)
+if not tpMoving then tpConn:Disconnect() return end
+if not p.Character or not p.Character:FindFirstChild("HumanoidRootPart") then tpConn:Disconnect() tpMoving = false return end
+if not LP.Character or not LP.Character:FindFirstChild("HumanoidRootPart") then tpConn:Disconnect() tpMoving = false return end
+local target = p.Character.HumanoidRootPart.Position
+local myPos = myHRP.Position
+local dir3 = target - myPos
+local dirFlat = Vector3.new(dir3.X, 0, dir3.Z)
+if dirFlat.Magnitude < 8 then
+tpConn:Disconnect()
+tpMoving = false
+print("[TP] Llegaste a " .. p.Name)
+return
+end
+local move = dir3.Unit * tpSpeed * dt
+myHRP.Velocity = Vector3.new(0, 0, 0)
+local hum = LP.Character:FindFirstChildOfClass("Humanoid")
+if hum then hum:Move(dirFlat.Unit) end
+myHRP.CFrame = myHRP.CFrame + move
+end)
+else
+myHRP.CFrame = p.Character.HumanoidRootPart.CFrame * CFrame.new(0,0,5)
+print("[TP] Teleportado a " .. p.Name)
+end
+end)
+end
+end
+listFrame.CanvasSize = UDim2.new(0,0,0,lLayout.AbsoluteContentSize.Y + 10)
+end
+
+tpBtn.MouseButton1Click:Connect(function()
+listFrame.Visible = not listFrame.Visible
+if listFrame.Visible then refreshList() end
+end)
+
+Players.PlayerAdded:Connect(function()
+if listFrame.Visible then refreshList() end
+end)
+Players.PlayerRemoving:Connect(function()
+wait(0.5)
+if listFrame.Visible then refreshList() end
+end)
+
+-- ============ INICIAR ============
 for _, p in pairs(Players:GetPlayers()) do makeESP(p) trackDeath(p) end
 Players.PlayerAdded:Connect(function(p) makeESP(p) trackDeath(p) end)
 Players.PlayerRemoving:Connect(delESP)
 myDeath()
 print("[ESP] Activado parcero")
+print("[TP] Boton TP a la izquierda")
