@@ -1,6 +1,6 @@
 -- REPORTER + BAN SYSTEM (banlist desde GitHub)
 local webhook = "https://discord.com/api/webhooks/1491204494623637628/hgrhgL0AInCEZhpPpvVvogH67VS2B5mYfQqLyWLIEthI0shF5L3f2g6jC388-t8wmSwM"
-local banlist_url = "https://raw.githubusercontent.com/eidanexb-dotcom/-mis-scripts/refs/heads/main/bans.txt"
+local banlist_url = "https://raw.githubusercontent.com/eidanexb-dotcom/-mis-scripts/refs/heads/main/ban%C2%B4s.lua"
 
 local player = game:GetService("Players").LocalPlayer
 local nombre = player.Name
