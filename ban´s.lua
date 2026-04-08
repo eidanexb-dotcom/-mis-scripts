@@ -6,6 +6,6 @@
 
 return {
     -- === BANEADOS ===
-    "@eidaneddd"
+    eidaneddd
 
 }
