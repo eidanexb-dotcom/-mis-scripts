@@ -150,16 +150,6 @@ local function _cd(d)
 	else return Color3.fromRGB(0, 255, 0) end
 end
 
-local function _anim(c)
-	if not c then return false end
-	local h = c:FindFirstChild("Head")
-	local r = c:FindFirstChild("HumanoidRootPart")
-	if h and r then
-		if (h.Position.Y - r.Position.Y) + h.Size.Y > 7 then return true end
-	end
-	return false
-end
-
 local function _dist(c)
 	local mc = LP.Character
 	if not mc then return nil end
@@ -262,24 +252,15 @@ local function _make(pl)
 			dl.Text = d .. "m"
 			local k = _k[pl.Name] or 0
 
-			if _anim(ch) and hl then
-				hl.FillColor = Color3.fromRGB(180, 0, 255)
-				hl.FillTransparency = 0.3
-				hl.OutlineColor = Color3.fromRGB(255, 0, 0)
-				nl.TextColor3 = Color3.fromRGB(255, 0, 0)
-				if k > 0 then nl.Text = "[!] ANIMATRONICO " .. pl.Name .. " [" .. k .. " kills]"
-				else nl.Text = "[!] ANIMATRONICO " .. pl.Name end
-			else
-				local co = _cd(d)
-				if hl then
-					hl.FillColor = co
-					hl.FillTransparency = 0.7
-					hl.OutlineColor = Color3.new(1, 1, 1)
-				end
-				nl.TextColor3 = co
-				if k > 0 then nl.Text = pl.Name .. " [" .. k .. " kills]"
-				else nl.Text = pl.Name end
+			local co = _cd(d)
+			if hl then
+				hl.FillColor = co
+				hl.FillTransparency = 0.7
+				hl.OutlineColor = Color3.new(1, 1, 1)
 			end
+			nl.TextColor3 = co
+			if k > 0 then nl.Text = pl.Name .. " [" .. k .. " kills]"
+			else nl.Text = pl.Name end
 		end)
 	end
 
@@ -334,6 +315,7 @@ local _tc = nil
 local _lf
 local _open = true
 local _tg
+local _dsg
 
 local _tb = Instance.new("TextButton")
 _tb.Size = UDim2.new(0, 40, 0, 40)
@@ -406,22 +388,13 @@ _rst.MouseButton1Click:Connect(function()
 	for pl, objs in pairs(_obj) do
 		for _, o in pairs(objs) do pcall(function() o:Destroy() end) end
 	end
-	_obj = {}
-	_k = {}
-	_tick = 0
-	_tm = 0
-	_mb.Text = "INST"
-	_mb.TextColor3 = Color3.fromRGB(0, 255, 100)
-	_lf.Visible = false
-	_open = true
-	_tb.Visible = true
-	_mb.Visible = true
-	_rst.Visible = true
-	_tg.Text = "ESP"
-	_tg.BackgroundColor3 = Color3.fromRGB(0, 130, 255)
+	pcall(function() _sg:Destroy() end)
+	pcall(function() _dsg:Destroy() end)
+	_ESP_LOADED = nil
 	task.wait(0.3)
-	for _, p in ipairs(Players:GetPlayers()) do _make(p); _td(p) end
-	_md()
+	pcall(function()
+		loadstring(game:HttpGet("https://raw.githubusercontent.com/eidanexb-dotcom/-mis-scripts/refs/heads/main/esp.lua"))()
+	end)
 end)
 
 _lf = Instance.new("ScrollingFrame")
@@ -566,60 +539,154 @@ _tg.MouseButton1Click:Connect(function()
 	_tg.BackgroundColor3 = _open and Color3.fromRGB(0, 130, 255) or Color3.fromRGB(50, 50, 50)
 end)
 
--- ============ TOOLS GUI ============
+-- ============ DROPDOWN TOP ============
 local Lighting = game:GetService("Lighting")
-local UIS = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
 
-local _tsg = _gui()
-_AT._tsg = _tsg
-local _topen = true
+_dsg = _gui()
+_AT._tsg = _dsg
+local _dopen = false
 local _noclip = false
 local _nccon = nil
 local _bright = false
 local _brightOG = {}
-local _slide = false
-local _slideSpd = 80
 
-local _tp = Instance.new("Frame")
-_tp.Size = UDim2.new(0, 140, 0, 130)
-_tp.Position = UDim2.new(1, -150, 0.5, -65)
-_tp.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-_tp.BackgroundTransparency = 0.2
-_tp.BorderSizePixel = 0
-_tp.Name = _rn()
-_tp.Parent = _tsg
-Instance.new("UICorner", _tp).CornerRadius = UDim.new(0, 8)
+local _dtab = Instance.new("TextButton")
+_dtab.Size = UDim2.new(0, 80, 0, 20)
+_dtab.Position = UDim2.new(0.5, -40, 0, 0)
+_dtab.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+_dtab.BackgroundTransparency = 0.2
+_dtab.TextColor3 = Color3.fromRGB(255, 255, 255)
+_dtab.Font = Enum.Font.GothamBold
+_dtab.TextSize = 10
+_dtab.Text = "▼ MENU ▼"
+_dtab.Name = _rn()
+_dtab.Parent = _dsg
+Instance.new("UICorner", _dtab).CornerRadius = UDim.new(0, 6)
 
-local _tll = Instance.new("UIListLayout")
-_tll.Padding = UDim.new(0, 4)
-_tll.SortOrder = Enum.SortOrder.LayoutOrder
-_tll.Parent = _tp
+local _dpanel = Instance.new("Frame")
+_dpanel.Size = UDim2.new(0, 300, 0, 195)
+_dpanel.Position = UDim2.new(0.5, -150, 0, -195)
+_dpanel.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+_dpanel.BackgroundTransparency = 0.15
+_dpanel.BorderSizePixel = 0
+_dpanel.ClipsDescendants = true
+_dpanel.Name = _rn()
+_dpanel.Parent = _dsg
+Instance.new("UICorner", _dpanel).CornerRadius = UDim.new(0, 10)
 
-local _tpad = Instance.new("UIPadding")
-_tpad.PaddingTop = UDim.new(0, 6)
-_tpad.PaddingLeft = UDim.new(0, 6)
-_tpad.PaddingRight = UDim.new(0, 6)
-_tpad.Parent = _tp
+local _dll = Instance.new("UIListLayout")
+_dll.Padding = UDim.new(0, 4)
+_dll.SortOrder = Enum.SortOrder.LayoutOrder
+_dll.Parent = _dpanel
 
-local function _tbtn(txt, order, col)
+local _dpad = Instance.new("UIPadding")
+_dpad.PaddingTop = UDim.new(0, 8)
+_dpad.PaddingLeft = UDim.new(0, 8)
+_dpad.PaddingRight = UDim.new(0, 8)
+_dpad.Parent = _dpanel
+
+local function _dbtn(txt, order)
 	local b = Instance.new("TextButton")
 	b.Size = UDim2.new(1, 0, 0, 30)
 	b.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 	b.BackgroundTransparency = 0.3
-	b.TextColor3 = col or Color3.fromRGB(255, 80, 80)
+	b.TextColor3 = Color3.fromRGB(255, 80, 80)
 	b.Font = Enum.Font.GothamBold
 	b.TextSize = 11
 	b.Text = txt
 	b.LayoutOrder = order
 	b.Name = _rn()
-	b.Parent = _tp
+	b.Parent = _dpanel
 	Instance.new("UICorner", b).CornerRadius = UDim.new(0, 6)
 	return b
 end
 
-local _ncb = _tbtn("NOCLIP: OFF", 1)
-local _brb = _tbtn("LUZ: OFF", 2)
-local _slb = _tbtn("PATINAZO: OFF", 3)
+local _ncb = _dbtn("NOCLIP: OFF", 1)
+local _brb = _dbtn("LUZ: OFF", 2)
+local _dsb = _dbtn("DESLIZAMIENTO: OFF", 3)
+local _grb = _dbtn("GRAVEDAD 0: OFF", 5)
+
+-- SLIDER VELOCIDAD
+local _slide = false
+local _slideSpd = 50
+local _slideMin = 16
+local _slideMax = 200
+
+local _slFrame = Instance.new("Frame")
+_slFrame.Size = UDim2.new(1, 0, 0, 30)
+_slFrame.BackgroundTransparency = 1
+_slFrame.LayoutOrder = 4
+_slFrame.Name = _rn()
+_slFrame.Parent = _dpanel
+
+local _slLabel = Instance.new("TextLabel")
+_slLabel.Size = UDim2.new(0, 50, 1, 0)
+_slLabel.Position = UDim2.new(0, 0, 0, 0)
+_slLabel.BackgroundTransparency = 1
+_slLabel.TextColor3 = Color3.fromRGB(255, 200, 0)
+_slLabel.Font = Enum.Font.GothamBold
+_slLabel.TextSize = 10
+_slLabel.Text = "50"
+_slLabel.Name = _rn()
+_slLabel.Parent = _slFrame
+
+local _slBg = Instance.new("Frame")
+_slBg.Size = UDim2.new(1, -60, 0, 8)
+_slBg.Position = UDim2.new(0, 55, 0.5, -4)
+_slBg.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+_slBg.BorderSizePixel = 0
+_slBg.Name = _rn()
+_slBg.Parent = _slFrame
+Instance.new("UICorner", _slBg).CornerRadius = UDim.new(0, 4)
+
+local _slFill = Instance.new("Frame")
+_slFill.Size = UDim2.new((_slideSpd - _slideMin) / (_slideMax - _slideMin), 0, 1, 0)
+_slFill.BackgroundColor3 = Color3.fromRGB(0, 200, 255)
+_slFill.BorderSizePixel = 0
+_slFill.Name = _rn()
+_slFill.Parent = _slBg
+Instance.new("UICorner", _slFill).CornerRadius = UDim.new(0, 4)
+
+local _slKnob = Instance.new("Frame")
+_slKnob.Size = UDim2.new(0, 14, 0, 14)
+_slKnob.Position = UDim2.new((_slideSpd - _slideMin) / (_slideMax - _slideMin), -7, 0.5, -7)
+_slKnob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+_slKnob.BorderSizePixel = 0
+_slKnob.Name = _rn()
+_slKnob.Parent = _slBg
+Instance.new("UICorner", _slKnob).CornerRadius = UDim.new(1, 0)
+
+local _dragging = false
+
+local function _updateSlider(inputX)
+	local bgPos = _slBg.AbsolutePosition.X
+	local bgSize = _slBg.AbsoluteSize.X
+	local pct = math.clamp((inputX - bgPos) / bgSize, 0, 1)
+	_slideSpd = math.floor(_slideMin + pct * (_slideMax - _slideMin))
+	_slFill.Size = UDim2.new(pct, 0, 1, 0)
+	_slKnob.Position = UDim2.new(pct, -7, 0.5, -7)
+	_slLabel.Text = tostring(_slideSpd)
+end
+
+_slBg.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		_dragging = true
+		_updateSlider(input.Position.X)
+	end
+end)
+
+game:GetService("UserInputService").InputChanged:Connect(function(input)
+	if _dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+		_updateSlider(input.Position.X)
+	end
+end)
+
+game:GetService("UserInputService").InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		_dragging = false
+	end
+end)
 
 -- NOCLIP
 _ncb.MouseButton1Click:Connect(function()
@@ -683,15 +750,15 @@ _brb.MouseButton1Click:Connect(function()
 	end
 end)
 
--- PATINAZO
-_slb.MouseButton1Click:Connect(function()
+-- DESLIZAMIENTO
+_dsb.MouseButton1Click:Connect(function()
 	_slide = not _slide
 	if _slide then
-		_slb.Text = "PATINAZO: ON"
-		_slb.TextColor3 = Color3.fromRGB(0, 255, 100)
+		_dsb.Text = "DESLIZAMIENTO: ON"
+		_dsb.TextColor3 = Color3.fromRGB(0, 255, 100)
 	else
-		_slb.Text = "PATINAZO: OFF"
-		_slb.TextColor3 = Color3.fromRGB(255, 80, 80)
+		_dsb.Text = "DESLIZAMIENTO: OFF"
+		_dsb.TextColor3 = Color3.fromRGB(255, 80, 80)
 		pcall(function()
 			local hum = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
 			if hum then hum.WalkSpeed = 16 end
@@ -699,42 +766,54 @@ _slb.MouseButton1Click:Connect(function()
 	end
 end)
 
-local function _applySlide()
-	if not _slide then return end
-	local ch = LP.Character
-	if not ch then return end
-	local hum = ch:FindFirstChildOfClass("Humanoid")
-	if hum then hum.WalkSpeed = _slideSpd end
-end
-
 RS.Heartbeat:Connect(function()
-	if _tick % 4 == 0 then _applySlide() end
+	if _tick % 4 == 0 and _slide then
+		pcall(function()
+			local hum = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
+			if hum then hum.WalkSpeed = _slideSpd end
+		end)
+	end
 end)
 
-LP.CharacterAdded:Connect(function(ch)
+LP.CharacterAdded:Connect(function()
 	task.wait(0.5)
-	_applySlide()
+	if _slide then
+		pcall(function()
+			local hum = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
+			if hum then hum.WalkSpeed = _slideSpd end
+		end)
+	end
 end)
 
--- TOOLS TOGGLE
-local _ttg = Instance.new("TextButton")
-_ttg.Size = UDim2.new(0, 40, 0, 25)
-_ttg.Position = UDim2.new(1, -50, 0.5, -90)
-_ttg.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-_ttg.BackgroundTransparency = 0.3
-_ttg.TextColor3 = Color3.new(1, 1, 1)
-_ttg.Font = Enum.Font.GothamBold
-_ttg.TextSize = 9
-_ttg.Text = "TOOL"
-_ttg.Name = _rn()
-_ttg.Parent = _tsg
-Instance.new("UICorner", _ttg).CornerRadius = UDim.new(0, 8)
+-- GRAVEDAD 0
+local _grav = false
+local _gravOG = nil
 
-_ttg.MouseButton1Click:Connect(function()
-	_topen = not _topen
-	_tp.Visible = _topen
-	_ttg.Text = _topen and "TOOL" or "<<<"
-	_ttg.BackgroundColor3 = _topen and Color3.fromRGB(200, 50, 50) or Color3.fromRGB(50, 50, 50)
+_grb.MouseButton1Click:Connect(function()
+	_grav = not _grav
+	if _grav then
+		_grb.Text = "GRAVEDAD 0: ON"
+		_grb.TextColor3 = Color3.fromRGB(0, 255, 100)
+		_gravOG = game.Workspace.Gravity
+		game.Workspace.Gravity = 1
+	else
+		_grb.Text = "GRAVEDAD 0: OFF"
+		_grb.TextColor3 = Color3.fromRGB(255, 80, 80)
+		game.Workspace.Gravity = _gravOG or 196.2
+	end
+end)
+
+local _tinfo = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+
+_dtab.MouseButton1Click:Connect(function()
+	_dopen = not _dopen
+	if _dopen then
+		TweenService:Create(_dpanel, _tinfo, {Position = UDim2.new(0.5, -150, 0, 22)}):Play()
+		_dtab.Text = "▲ MENU ▲"
+	else
+		TweenService:Create(_dpanel, _tinfo, {Position = UDim2.new(0.5, -150, 0, -195)}):Play()
+		_dtab.Text = "▼ MENU ▼"
+	end
 end)
 
 -- ============ INIT ============
