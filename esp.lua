@@ -1,3 +1,6 @@
+if _ESP_LOADED then return end
+_ESP_LOADED = true
+
 local Players = game:GetService("Players")
 local RS = game:GetService("RunService")
 local LP = Players.LocalPlayer
@@ -7,6 +10,10 @@ local _obj = {}
 local _k = {}
 local _tick = 0
 local _int = 0.15
+
+RS.Heartbeat:Connect(function()
+	_tick = _tick + 1
+end)
 
 local function _rn()
 	local s = ""
@@ -154,7 +161,6 @@ local function _make(pl)
 				return
 			end
 
-			_tick = _tick + 1
 			if _tick % 4 ~= 0 then return end
 
 			local d = _dist(ch)
@@ -253,7 +259,14 @@ _mb.Parent = _sg
 Instance.new("UICorner", _mb).CornerRadius = UDim.new(0, 6)
 
 _mb.MouseButton1Click:Connect(function()
+	local _prev = _tm
 	if _mv and _tc then _tc:Disconnect(); _mv = false end
+	if _prev == 2 then
+		pcall(function()
+			local hum = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
+			if hum then hum.Sit = false end
+		end)
+	end
 	_tm = (_tm + 1) % 3
 	if _tm == 0 then
 		_mb.Text = "INST"
@@ -265,6 +278,39 @@ _mb.MouseButton1Click:Connect(function()
 		_mb.Text = "BROMA"
 		_mb.TextColor3 = Color3.fromRGB(255, 0, 200)
 	end
+end)
+
+local _rst = Instance.new("TextButton")
+_rst.Size = UDim2.new(0, 40, 0, 25)
+_rst.Position = UDim2.new(0, 10, 0.5, 55)
+_rst.BackgroundColor3 = Color3.fromRGB(60, 0, 0)
+_rst.BackgroundTransparency = 0.3
+_rst.TextColor3 = Color3.fromRGB(255, 50, 50)
+_rst.Font = Enum.Font.GothamBold
+_rst.TextSize = 9
+_rst.Text = "RST"
+_rst.Name = _rn()
+_rst.Parent = _sg
+Instance.new("UICorner", _rst).CornerRadius = UDim.new(0, 6)
+
+_rst.MouseButton1Click:Connect(function()
+	if _mv and _tc then _tc:Disconnect(); _mv = false end
+	pcall(function()
+		local hum = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
+		if hum then hum.Sit = false end
+	end)
+	for pl, objs in pairs(_obj) do
+		for _, o in pairs(objs) do pcall(function() o:Destroy() end) end
+	end
+	_obj = {}
+	_k = {}
+	_tm = 0
+	_mb.Text = "INST"
+	_mb.TextColor3 = Color3.fromRGB(0, 255, 100)
+	_lf.Visible = false
+	task.wait(0.3)
+	for _, p in ipairs(Players:GetPlayers()) do _make(p); _td(p) end
+	_md()
 end)
 
 local _lf = Instance.new("ScrollingFrame")
@@ -353,7 +399,7 @@ local function _rl()
 						if not _mv then _tc:Disconnect() return end
 						if not p.Character or not p.Character:FindFirstChild("Head") then _tc:Disconnect(); _mv = false; return end
 						if not LP.Character or not LP.Character:FindFirstChild("HumanoidRootPart") then _tc:Disconnect(); _mv = false; return end
-						myHRP.CFrame = CFrame.new(p.Character.Head.Position + Vector3.new(0, 2, 0))
+						myHRP.CFrame = p.Character.Head.CFrame * CFrame.new(0, 2, 0)
 						myHRP.Velocity = Vector3.new(0, 0, 0)
 					end)
 				else
@@ -376,6 +422,31 @@ end)
 Players.PlayerRemoving:Connect(function()
 	task.wait(0.5)
 	if _lf.Visible then _rl() end
+end)
+
+-- ============ MENU TOGGLE ============
+local _open = true
+local _tg = Instance.new("TextButton")
+_tg.Size = UDim2.new(0, 40, 0, 25)
+_tg.Position = UDim2.new(0, 10, 0.5, -70)
+_tg.BackgroundColor3 = Color3.fromRGB(0, 130, 255)
+_tg.BackgroundTransparency = 0.3
+_tg.TextColor3 = Color3.new(1, 1, 1)
+_tg.Font = Enum.Font.GothamBold
+_tg.TextSize = 10
+_tg.Text = "ESP"
+_tg.Name = _rn()
+_tg.Parent = _sg
+Instance.new("UICorner", _tg).CornerRadius = UDim.new(0, 8)
+
+_tg.MouseButton1Click:Connect(function()
+	_open = not _open
+	_tb.Visible = _open
+	_mb.Visible = _open
+	_rst.Visible = _open
+	if not _open then _lf.Visible = false end
+	_tg.Text = _open and "ESP" or ">>>"
+	_tg.BackgroundColor3 = _open and Color3.fromRGB(0, 130, 255) or Color3.fromRGB(50, 50, 50)
 end)
 
 -- ============ INIT ============
