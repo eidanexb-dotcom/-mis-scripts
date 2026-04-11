@@ -221,7 +221,7 @@ end
 
 -- ============ TP ============
 local _sg = _gui()
-local _ts = false
+local _tm = 0
 local _spd = 100
 local _mv = false
 local _tc = nil
@@ -253,14 +253,17 @@ _mb.Parent = _sg
 Instance.new("UICorner", _mb).CornerRadius = UDim.new(0, 6)
 
 _mb.MouseButton1Click:Connect(function()
-	_ts = not _ts
-	if _ts then
+	if _mv and _tc then _tc:Disconnect(); _mv = false end
+	_tm = (_tm + 1) % 3
+	if _tm == 0 then
+		_mb.Text = "INST"
+		_mb.TextColor3 = Color3.fromRGB(0, 255, 100)
+	elseif _tm == 1 then
 		_mb.Text = "SUAVE"
 		_mb.TextColor3 = Color3.fromRGB(255, 200, 0)
 	else
-		if _mv and _tc then _tc:Disconnect(); _mv = false end
-		_mb.Text = "INST"
-		_mb.TextColor3 = Color3.fromRGB(0, 255, 100)
+		_mb.Text = "BROMA"
+		_mb.TextColor3 = Color3.fromRGB(255, 0, 200)
 	end
 end)
 
@@ -319,27 +322,39 @@ local function _rl()
 				if not p.Character or not p.Character:FindFirstChild("HumanoidRootPart") then return end
 				if not LP.Character or not LP.Character:FindFirstChild("HumanoidRootPart") then return end
 				local myHRP = LP.Character.HumanoidRootPart
-				if _ts then
+				local head = p.Character:FindFirstChild("Head")
+				if _tm == 1 then
 					if _mv and _tc then _tc:Disconnect() end
 					_mv = true
 					_tc = RS.Heartbeat:Connect(function(dt)
 						if not _mv then _tc:Disconnect() return end
-						if not p.Character or not p.Character:FindFirstChild("HumanoidRootPart") then _tc:Disconnect(); _mv = false; return end
+						if not p.Character or not p.Character:FindFirstChild("Head") then _tc:Disconnect(); _mv = false; return end
 						if not LP.Character or not LP.Character:FindFirstChild("HumanoidRootPart") then _tc:Disconnect(); _mv = false; return end
-						local target = p.Character.HumanoidRootPart.Position
-						local myPos = myHRP.Position
-						local dir3 = target - myPos
-						local dirFlat = Vector3.new(dir3.X, 0, dir3.Z)
-						if dirFlat.Magnitude < 8 then
+						local target = p.Character.Head.Position + Vector3.new(0, 2, 0)
+						local dir3 = target - myHRP.Position
+						if dir3.Magnitude < 3 then
+							myHRP.CFrame = CFrame.new(target)
 							_tc:Disconnect()
 							_mv = false
 							return
 						end
 						local move = dir3.Unit * _spd * dt
 						myHRP.Velocity = Vector3.new(0, 0, 0)
-						local hum = LP.Character:FindFirstChildOfClass("Humanoid")
-						if hum then hum:Move(dirFlat.Unit) end
 						myHRP.CFrame = myHRP.CFrame + move
+					end)
+				elseif _tm == 2 then
+					if _mv and _tc then _tc:Disconnect() end
+					if not head then return end
+					myHRP.CFrame = CFrame.new(head.Position + Vector3.new(0, 2, 0))
+					local hum = LP.Character:FindFirstChildOfClass("Humanoid")
+					if hum then hum.Sit = true end
+					_mv = true
+					_tc = RS.Heartbeat:Connect(function()
+						if not _mv then _tc:Disconnect() return end
+						if not p.Character or not p.Character:FindFirstChild("Head") then _tc:Disconnect(); _mv = false; return end
+						if not LP.Character or not LP.Character:FindFirstChild("HumanoidRootPart") then _tc:Disconnect(); _mv = false; return end
+						myHRP.CFrame = CFrame.new(p.Character.Head.Position + Vector3.new(0, 2, 0))
+						myHRP.Velocity = Vector3.new(0, 0, 0)
 					end)
 				else
 					myHRP.CFrame = p.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 5)
