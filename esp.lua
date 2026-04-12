@@ -1,5 +1,5 @@
-if _ESP_LOADED then return end
-_ESP_LOADED = true
+if _G._ESP_LOADED then return end
+_G._ESP_LOADED = true
 
 -- ============ ANTI-TAMPER ============
 local _AT = {}
@@ -35,7 +35,7 @@ do
 				for _, o in _ref.pairs(objs) do _ref.pcall(function() o:Destroy() end) end
 			end
 		end)
-		_ESP_LOADED = nil
+		_G._ESP_LOADED = nil
 	end
 
 	function _AT.protectTable(t)
@@ -65,13 +65,15 @@ do
 		if _ref.type(pcall) ~= "function" then return false end
 		if _ref.type(setmetatable) ~= "function" then return false end
 		if _ref.type(task.wait) ~= "function" then return false end
-		local ok = _ref.pcall(function()
+		local tampered = false
+		_ref.pcall(function()
 			local d = debug
 			if d and d.getinfo then
 				local info = d.getinfo(_AT.checkIntegrity)
-				if info and info.source and info.source:find("@") then return false end
+				if info and info.source and info.source:find("@") then tampered = true end
 			end
 		end)
+		if tampered then return false end
 		return true
 	end
 
@@ -87,7 +89,6 @@ do
 		end)
 	end
 
-	_AT._ref = _AT.protectReadOnly(_ref)
 	_AT.protectTable(_AT)
 end
 -- ============ FIN ANTI-TAMPER ============
@@ -96,11 +97,10 @@ local Players = game:GetService("Players")
 local RS = game:GetService("RunService")
 local LP = Players.LocalPlayer
 
-local _on = true
 local _obj = {}
+local _pcons = {}
 local _k = {}
 local _tick = 0
-local _int = 0.15
 local _gen = 0
 
 RS.Heartbeat:Connect(function()
@@ -265,13 +265,19 @@ local function _make(pl)
 	end
 
 	if pl.Character then _go(pl.Character) end
-	pl.CharacterAdded:Connect(function(c) if _gen ~= _mg then return end task.wait(0.5) if _on then _go(c) end end)
+	local ca = pl.CharacterAdded:Connect(function(c) if _gen ~= _mg then return end task.wait(0.5) _go(c) end)
+	if not _pcons[pl] then _pcons[pl] = {} end
+	table.insert(_pcons[pl], ca)
 end
 
 local function _del(pl)
 	if _obj[pl] then
 		for _, o in pairs(_obj[pl]) do pcall(function() o:Destroy() end) end
 		_obj[pl] = nil
+	end
+	if _pcons[pl] then
+		for _, c in pairs(_pcons[pl]) do pcall(function() c:Disconnect() end) end
+		_pcons[pl] = nil
 	end
 end
 
@@ -289,7 +295,9 @@ local function _td(pl)
 		end)
 	end
 	if pl.Character then _oc(pl.Character) end
-	pl.CharacterAdded:Connect(function(c) if _gen ~= _mg then return end _oc(c) end)
+	local ca = pl.CharacterAdded:Connect(function(c) if _gen ~= _mg then return end _oc(c) end)
+	if not _pcons[pl] then _pcons[pl] = {} end
+	table.insert(_pcons[pl], ca)
 end
 
 local function _md()
@@ -316,6 +324,12 @@ local _lf
 local _open = true
 local _tg
 local _dsg
+local _yuFrame
+local _noclip, _nccon
+local _bright, _brightOG
+local _slide
+local _grav, _gravOG, _gravCon
+local Lighting = game:GetService("Lighting")
 
 local _tb = Instance.new("TextButton")
 _tb.Size = UDim2.new(0, 40, 0, 40)
@@ -346,13 +360,14 @@ Instance.new("UICorner", _mb).CornerRadius = UDim.new(0, 6)
 _mb.MouseButton1Click:Connect(function()
 	local _prev = _tm
 	if _mv and _tc then _tc:Disconnect(); _mv = false end
-	if _prev == 2 or _prev == 3 then
+	if _prev >= 2 then
 		pcall(function()
 			local hum = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
 			if hum then hum.Sit = false end
 		end)
 	end
-	_tm = (_tm + 1) % 4
+	_tm = (_tm + 1) % 5
+	_yuFrame.Visible = (_tm == 4)
 	if _tm == 0 then
 		_mb.Text = "INST"
 		_mb.TextColor3 = Color3.fromRGB(0, 255, 100)
@@ -362,9 +377,12 @@ _mb.MouseButton1Click:Connect(function()
 	elseif _tm == 2 then
 		_mb.Text = "SOMBRERO"
 		_mb.TextColor3 = Color3.fromRGB(255, 0, 200)
-	else
+	elseif _tm == 3 then
 		_mb.Text = "COSTAL"
 		_mb.TextColor3 = Color3.fromRGB(255, 100, 0)
+	else
+		_mb.Text = "VALIENTE"
+		_mb.TextColor3 = Color3.fromRGB(255, 0, 0)
 	end
 end)
 
@@ -381,23 +399,70 @@ _rst.Name = _rn()
 _rst.Parent = _sg
 Instance.new("UICorner", _rst).CornerRadius = UDim.new(0, 6)
 
+local _rstBusy = false
 _rst.MouseButton1Click:Connect(function()
+	if _rstBusy then return end
+	_rstBusy = true
 	_gen = _gen + 1
 	if _mv and _tc then _tc:Disconnect(); _mv = false end
 	pcall(function()
 		local hum = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
 		if hum then hum.Sit = false end
 	end)
+	-- limpiar noclip
+	_noclip = false
+	if _nccon then pcall(function() _nccon:Disconnect() end); _nccon = nil end
+	pcall(function()
+		local ch = LP.Character
+		if ch then
+			for _, p in ipairs(ch:GetDescendants()) do
+				if p:IsA("BasePart") then p.CanCollide = true end
+			end
+		end
+	end)
+	-- restaurar gravedad
+	if _grav then
+		_grav = false
+		if _gravCon then pcall(function() _gravCon:Disconnect() end); _gravCon = nil end
+		pcall(function() game.Workspace.Gravity = _gravOG or 196.2 end)
+	end
+	-- restaurar luz
+	if _bright then
+		_bright = false
+		pcall(function()
+			if _brightOG.amb then
+				Lighting.Ambient = _brightOG.amb
+				Lighting.OutdoorAmbient = _brightOG.out
+				Lighting.Brightness = _brightOG.bright
+				Lighting.FogEnd = _brightOG.fog
+				Lighting.ClockTime = _brightOG.time
+			end
+			for _, e in ipairs(Lighting:GetDescendants()) do
+				if e:IsA("Atmosphere") or e:IsA("ColorCorrectionEffect") or e:IsA("BloomEffect") then
+					e.Enabled = true
+				end
+			end
+		end)
+	end
+	-- restaurar walkspeed
+	if _slide then
+		_slide = false
+		pcall(function()
+			local hum = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
+			if hum then hum.WalkSpeed = 16 end
+		end)
+	end
 	for pl, objs in pairs(_obj) do
 		for _, o in pairs(objs) do pcall(function() o:Destroy() end) end
 	end
 	pcall(function() _sg:Destroy() end)
 	pcall(function() _dsg:Destroy() end)
-	_ESP_LOADED = nil
+	_G._ESP_LOADED = nil
 	task.wait(0.3)
-	pcall(function()
+	local ok = pcall(function()
 		loadstring(game:HttpGet("https://raw.githubusercontent.com/eidanexb-dotcom/-mis-scripts/refs/heads/main/esp.lua?nocache=" .. tostring(tick()) .. tostring(math.random(100000, 999999)), true))()
 	end)
+	if not ok then _rstBusy = false end
 end)
 
 _lf = Instance.new("ScrollingFrame")
@@ -515,8 +580,29 @@ local function _rl()
 							myRoot.Velocity = Vector3.new(0, 0, 0)
 						end)
 					end)
+				elseif _tm == 4 then
+					if _mv and _tc then _tc:Disconnect() end
+					local tTorso = p.Character:FindFirstChild("UpperTorso") or p.Character:FindFirstChild("Torso")
+					if not tTorso then return end
+					myHRP.CFrame = tTorso.CFrame * CFrame.new(0, -2.5, 1.8)
+					local hum = LP.Character:FindFirstChildOfClass("Humanoid")
+					if hum then hum.Sit = true end
+					_mv = true
+					_tc = RS.Heartbeat:Connect(function()
+						if not _mv then _tc:Disconnect() return end
+						local myRoot = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
+						if not myRoot then _tc:Disconnect(); _mv = false; return end
+						local tT = p.Character and (p.Character:FindFirstChild("UpperTorso") or p.Character:FindFirstChild("Torso"))
+						if not tT then return end
+						pcall(function()
+							local yupi = math.sin(tick() * _yupiSpd) * 0.6
+							myRoot.CFrame = tT.CFrame * CFrame.new(0, -2.5, 1.8 + yupi)
+							myRoot.Velocity = Vector3.new(0, 0, 0)
+						end)
+					end)
 				else
-					myHRP.CFrame = p.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 5)
+					local tHRP = p.Character:FindFirstChild("HumanoidRootPart")
+					if tHRP then myHRP.CFrame = tHRP.CFrame * CFrame.new(0, 0, 5) end
 				end
 			end)
 		end
@@ -562,16 +648,16 @@ _tg.MouseButton1Click:Connect(function()
 end)
 
 -- ============ DROPDOWN TOP ============
-local Lighting = game:GetService("Lighting")
 local TweenService = game:GetService("TweenService")
+local UIS = game:GetService("UserInputService")
 
 _dsg = _gui()
 _AT._tsg = _dsg
 local _dopen = false
-local _noclip = false
-local _nccon = nil
-local _bright = false
-local _brightOG = {}
+_noclip = false
+_nccon = nil
+_bright = false
+_brightOG = {}
 
 local _dtab = Instance.new("TextButton")
 _dtab.Size = UDim2.new(0, 80, 0, 20)
@@ -633,8 +719,78 @@ local _brb = _dbtn("LUZ: OFF", 2)
 local _dsb = _dbtn("DESLIZAMIENTO: OFF", 3)
 local _grb = _dbtn("GRAVEDAD 0: OFF", 5)
 
+-- SLIDER YUPI
+local _yupiSpd = 10
+local _yupiMin = 1
+local _yupiMax = 1000
+
+_yuFrame = Instance.new("Frame")
+_yuFrame.Size = UDim2.new(1, 0, 0, 30)
+_yuFrame.BackgroundTransparency = 1
+_yuFrame.LayoutOrder = 6
+_yuFrame.Name = _rn()
+_yuFrame.Visible = false
+_yuFrame.Parent = _dpanel
+
+local _yuLabel = Instance.new("TextLabel")
+_yuLabel.Size = UDim2.new(0, 65, 1, 0)
+_yuLabel.Position = UDim2.new(0, 0, 0, 0)
+_yuLabel.BackgroundTransparency = 1
+_yuLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
+_yuLabel.Font = Enum.Font.GothamBold
+_yuLabel.TextSize = 9
+_yuLabel.Text = "YUPI: 10"
+_yuLabel.Name = _rn()
+_yuLabel.Parent = _yuFrame
+
+local _yuBg = Instance.new("Frame")
+_yuBg.Size = UDim2.new(1, -75, 0, 8)
+_yuBg.Position = UDim2.new(0, 70, 0.5, -4)
+_yuBg.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+_yuBg.BorderSizePixel = 0
+_yuBg.Name = _rn()
+_yuBg.Parent = _yuFrame
+Instance.new("UICorner", _yuBg).CornerRadius = UDim.new(0, 4)
+
+local _yuFill = Instance.new("Frame")
+_yuFill.Size = UDim2.new((_yupiSpd - _yupiMin) / (_yupiMax - _yupiMin), 0, 1, 0)
+_yuFill.BackgroundColor3 = Color3.fromRGB(255, 0, 100)
+_yuFill.BorderSizePixel = 0
+_yuFill.Name = _rn()
+_yuFill.Parent = _yuBg
+Instance.new("UICorner", _yuFill).CornerRadius = UDim.new(0, 4)
+
+local _yuKnob = Instance.new("Frame")
+_yuKnob.Size = UDim2.new(0, 14, 0, 14)
+_yuKnob.Position = UDim2.new((_yupiSpd - _yupiMin) / (_yupiMax - _yupiMin), -7, 0.5, -7)
+_yuKnob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+_yuKnob.BorderSizePixel = 0
+_yuKnob.Name = _rn()
+_yuKnob.Parent = _yuBg
+Instance.new("UICorner", _yuKnob).CornerRadius = UDim.new(1, 0)
+
+local _yuDrag = false
+
+local function _updateYupi(inputX)
+	local bgPos = _yuBg.AbsolutePosition.X
+	local bgSize = _yuBg.AbsoluteSize.X
+	local pct = math.clamp((inputX - bgPos) / bgSize, 0, 1)
+	_yupiSpd = math.floor(_yupiMin + pct * (_yupiMax - _yupiMin))
+	_yuFill.Size = UDim2.new(pct, 0, 1, 0)
+	_yuKnob.Position = UDim2.new(pct, -7, 0.5, -7)
+	_yuLabel.Text = "YUPI: " .. tostring(_yupiSpd)
+end
+
+_yuBg.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		_yuDrag = true
+		_updateYupi(input.Position.X)
+	end
+end)
+
+
 -- SLIDER VELOCIDAD
-local _slide = false
+_slide = false
 local _slideSpd = 50
 local _slideMin = 16
 local _slideMax = 200
@@ -702,15 +858,17 @@ _slBg.InputBegan:Connect(function(input)
 	end
 end)
 
-game:GetService("UserInputService").InputChanged:Connect(function(input)
-	if _dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-		_updateSlider(input.Position.X)
+UIS.InputChanged:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+		if _dragging then _updateSlider(input.Position.X) end
+		if _yuDrag then _updateYupi(input.Position.X) end
 	end
 end)
 
-game:GetService("UserInputService").InputEnded:Connect(function(input)
+UIS.InputEnded:Connect(function(input)
 	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
 		_dragging = false
+		_yuDrag = false
 	end
 end)
 
@@ -732,6 +890,14 @@ _ncb.MouseButton1Click:Connect(function()
 		_ncb.Text = "NOCLIP: OFF"
 		_ncb.TextColor3 = Color3.fromRGB(255, 80, 80)
 		if _nccon then _nccon:Disconnect(); _nccon = nil end
+		pcall(function()
+			local ch = LP.Character
+			if ch then
+				for _, p in ipairs(ch:GetDescendants()) do
+					if p:IsA("BasePart") then p.CanCollide = true end
+				end
+			end
+		end)
 	end
 end)
 
@@ -812,9 +978,9 @@ LP.CharacterAdded:Connect(function()
 end)
 
 -- GRAVEDAD 0
-local _grav = false
-local _gravOG = nil
-local _gravCon = nil
+_grav = false
+_gravOG = nil
+_gravCon = nil
 
 _grb.MouseButton1Click:Connect(function()
 	_grav = not _grav
