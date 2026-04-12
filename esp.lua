@@ -566,7 +566,7 @@ Instance.new("UICorner", _dtab).CornerRadius = UDim.new(0, 6)
 
 local _dpanel = Instance.new("Frame")
 _dpanel.Size = UDim2.new(0, 300, 0, 195)
-_dpanel.Position = UDim2.new(0.5, -150, 0, -210)
+_dpanel.Position = UDim2.new(0.5, -150, -1, 0)
 _dpanel.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 _dpanel.BackgroundTransparency = 0.15
 _dpanel.BorderSizePixel = 0
@@ -816,15 +816,10 @@ local _tinfo = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Ou
 _dtab.MouseButton1Click:Connect(function()
 	_dopen = not _dopen
 	if _dopen then
-		_dpanel.Visible = true
 		TweenService:Create(_dpanel, _tinfo, {Position = UDim2.new(0.5, -150, 0, 22)}):Play()
 		_dtab.Text = "▲ MENU ▲"
 	else
-		local tw = TweenService:Create(_dpanel, _tinfo, {Position = UDim2.new(0.5, -150, 0, -210)})
-		tw:Play()
-		tw.Completed:Connect(function()
-			if not _dopen then _dpanel.Visible = false end
-		end)
+		TweenService:Create(_dpanel, _tinfo, {Position = UDim2.new(0.5, -150, -1, 0)}):Play()
 		_dtab.Text = "▼ MENU ▼"
 	end
 end)
