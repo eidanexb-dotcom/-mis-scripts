@@ -393,7 +393,7 @@ _rst.MouseButton1Click:Connect(function()
 	_ESP_LOADED = nil
 	task.wait(0.3)
 	pcall(function()
-		loadstring(game:HttpGet("https://raw.githubusercontent.com/eidanexb-dotcom/-mis-scripts/refs/heads/main/esp.lua?t=" .. tostring(tick())))()
+		loadstring(game:HttpGet("https://raw.githubusercontent.com/eidanexb-dotcom/-mis-scripts/refs/heads/main/esp.lua?nocache=" .. tostring(tick()) .. tostring(math.random(100000, 999999)), true))()
 	end)
 end)
 
@@ -565,7 +565,7 @@ _dtab.Parent = _dsg
 Instance.new("UICorner", _dtab).CornerRadius = UDim.new(0, 6)
 
 local _dpanel = Instance.new("Frame")
-_dpanel.Size = UDim2.new(0, 300, 0, 195)
+_dpanel.Size = UDim2.new(0, 300, 0, 230)
 _dpanel.Position = UDim2.new(0.5, -150, -1, 0)
 _dpanel.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 _dpanel.BackgroundTransparency = 0.15
@@ -606,6 +606,7 @@ local _ncb = _dbtn("NOCLIP: OFF", 1)
 local _brb = _dbtn("LUZ: OFF", 2)
 local _dsb = _dbtn("DESLIZAMIENTO: OFF", 3)
 local _grb = _dbtn("GRAVEDAD 0: OFF", 5)
+local _ocb = _dbtn("OCULTO: OFF", 6)
 
 -- SLIDER VELOCIDAD
 local _slide = false
@@ -808,6 +809,103 @@ _grb.MouseButton1Click:Connect(function()
 		_grb.TextColor3 = Color3.fromRGB(255, 80, 80)
 		if _gravCon then _gravCon:Disconnect(); _gravCon = nil end
 		game.Workspace.Gravity = _gravOG or 196.2
+	end
+end)
+
+-- OCULTO
+local _ocOn = false
+local _ocTarget = nil
+local _ocCon = nil
+
+local _ocList = Instance.new("ScrollingFrame")
+_ocList.Size = UDim2.new(1, 0, 0, 100)
+_ocList.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+_ocList.BackgroundTransparency = 0.3
+_ocList.BorderSizePixel = 0
+_ocList.ScrollBarThickness = 3
+_ocList.Visible = false
+_ocList.LayoutOrder = 7
+_ocList.Name = _rn()
+_ocList.Parent = _dpanel
+Instance.new("UICorner", _ocList).CornerRadius = UDim.new(0, 6)
+local _ocLL = Instance.new("UIListLayout")
+_ocLL.Padding = UDim.new(0, 2)
+_ocLL.SortOrder = Enum.SortOrder.Name
+_ocLL.Parent = _ocList
+
+local function _ocStop()
+	if _ocCon then _ocCon:Disconnect(); _ocCon = nil end
+	_ocTarget = nil
+	_ocOn = false
+	_ocb.Text = "OCULTO: OFF"
+	_ocb.TextColor3 = Color3.fromRGB(255, 80, 80)
+	pcall(function()
+		local hum = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
+		if hum then hum.Sit = false end
+	end)
+end
+
+local function _ocStart(target)
+	_ocStop()
+	_ocTarget = target
+	_ocOn = true
+	_ocb.Text = "OCULTO: " .. target.Name
+	_ocb.TextColor3 = Color3.fromRGB(255, 0, 200)
+	pcall(function()
+		local myRoot = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
+		local tHead = target.Character and target.Character:FindFirstChild("Head")
+		if myRoot and tHead then
+			myRoot.CFrame = CFrame.new(tHead.Position + Vector3.new(0, 2, 0))
+			local hum = LP.Character:FindFirstChildOfClass("Humanoid")
+			if hum then hum.Sit = true end
+		end
+	end)
+	_ocCon = RS.Heartbeat:Connect(function()
+		if not _ocOn then _ocCon:Disconnect() return end
+		local myRoot = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
+		if not myRoot then _ocStop(); return end
+		local tHead = _ocTarget and _ocTarget.Character and _ocTarget.Character:FindFirstChild("Head")
+		if not tHead then return end
+		pcall(function()
+			myRoot.CFrame = tHead.CFrame * CFrame.new(0, 2, 0)
+			myRoot.Velocity = Vector3.new(0, 0, 0)
+		end)
+	end)
+end
+
+local function _ocRefresh()
+	for _, c in pairs(_ocList:GetChildren()) do
+		if c:IsA("TextButton") then c:Destroy() end
+	end
+	for _, p in ipairs(Players:GetPlayers()) do
+		if p ~= LP then
+			local btn = Instance.new("TextButton")
+			btn.Size = UDim2.new(1, -4, 0, 25)
+			btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+			btn.BackgroundTransparency = 0.3
+			btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+			btn.Font = Enum.Font.Gotham
+			btn.TextSize = 11
+			btn.Text = p.Name
+			btn.Name = _rn()
+			btn.Parent = _ocList
+			Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
+			btn.MouseButton1Click:Connect(function()
+				_ocStart(p)
+				_ocList.Visible = false
+			end)
+		end
+	end
+	_ocList.CanvasSize = UDim2.new(0, 0, 0, _ocLL.AbsoluteContentSize.Y + 5)
+end
+
+_ocb.MouseButton1Click:Connect(function()
+	if _ocOn then
+		_ocStop()
+		_ocList.Visible = false
+	else
+		_ocList.Visible = not _ocList.Visible
+		if _ocList.Visible then _ocRefresh() end
 	end
 end)
 
