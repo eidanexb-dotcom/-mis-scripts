@@ -451,6 +451,7 @@ local function _rl()
 			btn.MouseButton1Click:Connect(function()
 				if not p.Character or not p.Character:FindFirstChild("HumanoidRootPart") then return end
 				if not LP.Character or not LP.Character:FindFirstChild("HumanoidRootPart") then return end
+				if _ocMode then _ocStart(p) return end
 				local myHRP = LP.Character.HumanoidRootPart
 				local head = p.Character:FindFirstChild("Head")
 				if _tm == 1 then
@@ -564,13 +565,14 @@ _dtab.Name = _rn()
 _dtab.Parent = _dsg
 Instance.new("UICorner", _dtab).CornerRadius = UDim.new(0, 6)
 
-local _dpanel = Instance.new("Frame")
-_dpanel.Size = UDim2.new(0, 300, 0, 230)
+local _dpanel = Instance.new("ScrollingFrame")
+_dpanel.Size = UDim2.new(0, 300, 0, 195)
 _dpanel.Position = UDim2.new(0.5, -150, -1, 0)
 _dpanel.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 _dpanel.BackgroundTransparency = 0.15
 _dpanel.BorderSizePixel = 0
-_dpanel.ClipsDescendants = true
+_dpanel.ScrollBarThickness = 4
+_dpanel.ScrollBarImageColor3 = Color3.fromRGB(100, 100, 100)
 _dpanel.Name = _rn()
 _dpanel.Parent = _dsg
 Instance.new("UICorner", _dpanel).CornerRadius = UDim.new(0, 10)
@@ -579,6 +581,9 @@ local _dll = Instance.new("UIListLayout")
 _dll.Padding = UDim.new(0, 4)
 _dll.SortOrder = Enum.SortOrder.LayoutOrder
 _dll.Parent = _dpanel
+_dll:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+	_dpanel.CanvasSize = UDim2.new(0, 0, 0, _dll.AbsoluteContentSize.Y + 20)
+end)
 
 local _dpad = Instance.new("UIPadding")
 _dpad.PaddingTop = UDim.new(0, 8)
@@ -816,27 +821,13 @@ end)
 local _ocOn = false
 local _ocTarget = nil
 local _ocCon = nil
-
-local _ocList = Instance.new("ScrollingFrame")
-_ocList.Size = UDim2.new(1, 0, 0, 100)
-_ocList.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-_ocList.BackgroundTransparency = 0.3
-_ocList.BorderSizePixel = 0
-_ocList.ScrollBarThickness = 3
-_ocList.Visible = false
-_ocList.LayoutOrder = 7
-_ocList.Name = _rn()
-_ocList.Parent = _dpanel
-Instance.new("UICorner", _ocList).CornerRadius = UDim.new(0, 6)
-local _ocLL = Instance.new("UIListLayout")
-_ocLL.Padding = UDim.new(0, 2)
-_ocLL.SortOrder = Enum.SortOrder.Name
-_ocLL.Parent = _ocList
+local _ocMode = false
 
 local function _ocStop()
 	if _ocCon then _ocCon:Disconnect(); _ocCon = nil end
 	_ocTarget = nil
 	_ocOn = false
+	_ocMode = false
 	_ocb.Text = "OCULTO: OFF"
 	_ocb.TextColor3 = Color3.fromRGB(255, 80, 80)
 	pcall(function()
@@ -845,17 +836,23 @@ local function _ocStop()
 	end)
 end
 
+local function _getTorso(ch)
+	if not ch then return nil end
+	return ch:FindFirstChild("UpperTorso") or ch:FindFirstChild("Torso")
+end
+
 local function _ocStart(target)
 	_ocStop()
 	_ocTarget = target
 	_ocOn = true
 	_ocb.Text = "OCULTO: " .. target.Name
 	_ocb.TextColor3 = Color3.fromRGB(255, 0, 200)
+	_lf.Visible = false
 	pcall(function()
 		local myRoot = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
-		local tHead = target.Character and target.Character:FindFirstChild("Head")
-		if myRoot and tHead then
-			myRoot.CFrame = CFrame.new(tHead.Position + Vector3.new(0, 2, 0))
+		local tTorso = _getTorso(target.Character)
+		if myRoot and tTorso then
+			myRoot.CFrame = tTorso.CFrame * CFrame.new(0, 1, 1.5) * CFrame.Angles(math.rad(-30), math.rad(180), 0)
 			local hum = LP.Character:FindFirstChildOfClass("Humanoid")
 			if hum then hum.Sit = true end
 		end
@@ -864,48 +861,24 @@ local function _ocStart(target)
 		if not _ocOn then _ocCon:Disconnect() return end
 		local myRoot = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
 		if not myRoot then _ocStop(); return end
-		local tHead = _ocTarget and _ocTarget.Character and _ocTarget.Character:FindFirstChild("Head")
-		if not tHead then return end
+		local tTorso = _ocTarget and _getTorso(_ocTarget.Character)
+		if not tTorso then return end
 		pcall(function()
-			myRoot.CFrame = tHead.CFrame * CFrame.new(0, 2, 0)
+			myRoot.CFrame = tTorso.CFrame * CFrame.new(0, 1, 1.5) * CFrame.Angles(math.rad(-30), math.rad(180), 0)
 			myRoot.Velocity = Vector3.new(0, 0, 0)
 		end)
 	end)
 end
 
-local function _ocRefresh()
-	for _, c in pairs(_ocList:GetChildren()) do
-		if c:IsA("TextButton") then c:Destroy() end
-	end
-	for _, p in ipairs(Players:GetPlayers()) do
-		if p ~= LP then
-			local btn = Instance.new("TextButton")
-			btn.Size = UDim2.new(1, -4, 0, 25)
-			btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-			btn.BackgroundTransparency = 0.3
-			btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-			btn.Font = Enum.Font.Gotham
-			btn.TextSize = 11
-			btn.Text = p.Name
-			btn.Name = _rn()
-			btn.Parent = _ocList
-			Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
-			btn.MouseButton1Click:Connect(function()
-				_ocStart(p)
-				_ocList.Visible = false
-			end)
-		end
-	end
-	_ocList.CanvasSize = UDim2.new(0, 0, 0, _ocLL.AbsoluteContentSize.Y + 5)
-end
-
 _ocb.MouseButton1Click:Connect(function()
 	if _ocOn then
 		_ocStop()
-		_ocList.Visible = false
 	else
-		_ocList.Visible = not _ocList.Visible
-		if _ocList.Visible then _ocRefresh() end
+		_ocMode = true
+		_ocb.Text = "OCULTO: ..."
+		_ocb.TextColor3 = Color3.fromRGB(255, 200, 0)
+		_lf.Visible = true
+		_rl()
 	end
 end)
 
