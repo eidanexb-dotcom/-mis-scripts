@@ -65,7 +65,11 @@ do
 		if _ref.type(pcall) ~= "function" then return false end
 		if _ref.type(setmetatable) ~= "function" then return false end
 		if _ref.type(task.wait) ~= "function" then return false end
+		if _ref.type(loadstring) ~= "function" then return false end
 		local tampered = false
+		_ref.pcall(function()
+			if _ref.type(game.HttpGet) ~= "function" then tampered = true end
+		end)
 		_ref.pcall(function()
 			local d = debug
 			if d and d.getinfo then
@@ -97,24 +101,41 @@ local Players = game:GetService("Players")
 local RS = game:GetService("RunService")
 local LP = Players.LocalPlayer
 
+-- ============ CACHE ============
+local mfloor, mrand, mclamp = math.floor, math.random, math.clamp
+local msin = math.sin
+local schar = string.char
+local tconcat, tinsert = table.concat, table.insert
+local C3_RED = Color3.fromRGB(255, 0, 0)
+local C3_GREEN = Color3.fromRGB(0, 255, 0)
+local C3_WHITE = Color3.new(1, 1, 1)
+local C3_BLACK = Color3.new(0, 0, 0)
+local C3_YELLOW = Color3.fromRGB(255, 255, 100)
+local C3_ON = Color3.fromRGB(0, 255, 100)
+local C3_OFF = Color3.fromRGB(255, 80, 80)
+local C3_CLAUDEX = Color3.fromRGB(220, 120, 50)
+local V3_ZERO = Vector3.zero or Vector3.new(0, 0, 0)
+local RAD_N30 = math.rad(-30)
+local RAD_180 = math.rad(180)
+
 local _obj = {}
 local _pcons = {}
 local _k = {}
 local _tick = 0
 local _gen = 0
+local _mainGen = _gen
 
 RS.Heartbeat:Connect(function()
+	if _gen ~= _mainGen then return end
 	_tick = _tick + 1
 end)
 
 local function _rn()
-	local s = ""
-	for i = 1, math.random(8, 14) do
-		local r = math.random(1, 2)
-		if r == 1 then s = s .. string.char(math.random(65, 90))
-		else s = s .. string.char(math.random(97, 122)) end
+	local t = {}
+	for i = 1, mrand(8, 14) do
+		t[i] = schar(mrand(1, 2) == 1 and mrand(65, 90) or mrand(97, 122))
 	end
-	return s
+	return tconcat(t)
 end
 
 local function _gui()
@@ -140,14 +161,14 @@ local function _gui()
 end
 
 local function _cd(d)
-	if d <= 20 then return Color3.fromRGB(255, 0, 0)
+	if d <= 20 then return C3_RED
 	elseif d <= 30 then
 		local t = (d - 20) / 10
-		return Color3.fromRGB(255, math.floor(165 * t), 0)
+		return Color3.fromRGB(255, mfloor(165 * t), 0)
 	elseif d <= 50 then
 		local t = (d - 30) / 20
-		return Color3.fromRGB(math.floor(255 * (1 - t)), math.floor(165 + 90 * t), 0)
-	else return Color3.fromRGB(0, 255, 0) end
+		return Color3.fromRGB(mfloor(255 * (1 - t)), mfloor(165 + 90 * t), 0)
+	else return C3_GREEN end
 end
 
 local function _dist(c)
@@ -157,7 +178,7 @@ local function _dist(c)
 	if not m or not c then return nil end
 	local r = c:FindFirstChild("HumanoidRootPart")
 	if not r then return nil end
-	return math.floor((m.Position - r.Position).Magnitude)
+	return mfloor((m.Position - r.Position).Magnitude)
 end
 
 local function _cerca(ch, pl)
@@ -193,9 +214,9 @@ local function _make(pl)
 		pcall(function()
 			hl = Instance.new("Highlight")
 			hl.Adornee = ch
-			hl.FillColor = Color3.fromRGB(255, 0, 0)
+			hl.FillColor = C3_RED
 			hl.FillTransparency = 0.7
-			hl.OutlineColor = Color3.new(1, 1, 1)
+			hl.OutlineColor = C3_WHITE
 			hl.OutlineTransparency = 0.3
 			pcall(function() hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop end)
 			hl.Name = _rn()
@@ -213,9 +234,9 @@ local function _make(pl)
 		local nl = Instance.new("TextLabel")
 		nl.Size = UDim2.new(1, 0, 0.5, 0)
 		nl.BackgroundTransparency = 1
-		nl.TextColor3 = Color3.fromRGB(255, 0, 0)
+		nl.TextColor3 = C3_RED
 		nl.TextStrokeTransparency = 0.5
-		nl.TextStrokeColor3 = Color3.new(0, 0, 0)
+		nl.TextStrokeColor3 = C3_BLACK
 		nl.Font = Enum.Font.Gotham
 		nl.TextSize = 13
 		nl.Text = pl.Name
@@ -226,9 +247,9 @@ local function _make(pl)
 		dl.Size = UDim2.new(1, 0, 0.5, 0)
 		dl.Position = UDim2.new(0, 0, 0.5, 0)
 		dl.BackgroundTransparency = 1
-		dl.TextColor3 = Color3.fromRGB(255, 255, 100)
+		dl.TextColor3 = C3_YELLOW
 		dl.TextStrokeTransparency = 0.5
-		dl.TextStrokeColor3 = Color3.new(0, 0, 0)
+		dl.TextStrokeColor3 = C3_BLACK
 		dl.Font = Enum.Font.Gotham
 		dl.TextSize = 11
 		dl.Text = "0m"
@@ -253,11 +274,7 @@ local function _make(pl)
 			local k = _k[pl.Name] or 0
 
 			local co = _cd(d)
-			if hl then
-				hl.FillColor = co
-				hl.FillTransparency = 0.7
-				hl.OutlineColor = Color3.new(1, 1, 1)
-			end
+			if hl then hl.FillColor = co end
 			nl.TextColor3 = co
 			if k > 0 then nl.Text = pl.Name .. " [" .. k .. " kills]"
 			else nl.Text = pl.Name end
@@ -279,6 +296,7 @@ local function _del(pl)
 		for _, c in pairs(_pcons[pl]) do pcall(function() c:Disconnect() end) end
 		_pcons[pl] = nil
 	end
+	_k[pl.Name] = nil
 end
 
 local function _td(pl)
@@ -325,10 +343,13 @@ local _open = true
 local _tg
 local _dsg
 local _yuFrame
+local _spFrame
 local _noclip, _nccon
+local _ncParts = {}
 local _bright, _brightOG
 local _slide
 local _grav, _gravOG, _gravCon
+local _ncb, _brb, _dsb, _grb
 local Lighting = game:GetService("Lighting")
 
 local _tb = Instance.new("TextButton")
@@ -349,7 +370,7 @@ _mb.Size = UDim2.new(0, 40, 0, 25)
 _mb.Position = UDim2.new(0, 10, 0.5, 25)
 _mb.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 _mb.BackgroundTransparency = 0.3
-_mb.TextColor3 = Color3.fromRGB(0, 255, 100)
+_mb.TextColor3 = C3_ON
 _mb.Font = Enum.Font.Gotham
 _mb.TextSize = 9
 _mb.Text = "INST"
@@ -368,9 +389,10 @@ _mb.MouseButton1Click:Connect(function()
 	end
 	_tm = (_tm + 1) % 5
 	_yuFrame.Visible = (_tm == 4)
+	_spFrame.Visible = (_tm == 1)
 	if _tm == 0 then
 		_mb.Text = "INST"
-		_mb.TextColor3 = Color3.fromRGB(0, 255, 100)
+		_mb.TextColor3 = C3_ON
 	elseif _tm == 1 then
 		_mb.Text = "SUAVE"
 		_mb.TextColor3 = Color3.fromRGB(255, 200, 0)
@@ -382,7 +404,7 @@ _mb.MouseButton1Click:Connect(function()
 		_mb.TextColor3 = Color3.fromRGB(255, 100, 0)
 	else
 		_mb.Text = "VALIENTE"
-		_mb.TextColor3 = Color3.fromRGB(255, 0, 0)
+		_mb.TextColor3 = C3_RED
 	end
 end)
 
@@ -400,7 +422,7 @@ _rst.Parent = _sg
 Instance.new("UICorner", _rst).CornerRadius = UDim.new(0, 6)
 
 local _rstBusy = false
-_rst.MouseButton1Click:Connect(function()
+local function _doRST()
 	if _rstBusy then return end
 	_rstBusy = true
 	_gen = _gen + 1
@@ -412,14 +434,11 @@ _rst.MouseButton1Click:Connect(function()
 	-- limpiar noclip
 	_noclip = false
 	if _nccon then pcall(function() _nccon:Disconnect() end); _nccon = nil end
-	pcall(function()
-		local ch = LP.Character
-		if ch then
-			for _, p in ipairs(ch:GetDescendants()) do
-				if p:IsA("BasePart") then p.CanCollide = true end
-			end
-		end
-	end)
+	for i = 1, #_ncParts do
+		local p = _ncParts[i]
+		if p and p.Parent then pcall(function() p.CanCollide = true end) end
+	end
+	_ncParts = {}
 	-- restaurar gravedad
 	if _grav then
 		_grav = false
@@ -452,18 +471,31 @@ _rst.MouseButton1Click:Connect(function()
 			if hum then hum.WalkSpeed = 16 end
 		end)
 	end
-	for pl, objs in pairs(_obj) do
-		for _, o in pairs(objs) do pcall(function() o:Destroy() end) end
-	end
-	pcall(function() _sg:Destroy() end)
-	pcall(function() _dsg:Destroy() end)
-	_G._ESP_LOADED = nil
-	task.wait(0.3)
-	local ok = pcall(function()
-		loadstring(game:HttpGet("https://raw.githubusercontent.com/eidanexb-dotcom/-mis-scripts/refs/heads/main/esp.lua?nocache=" .. tostring(tick()) .. tostring(math.random(100000, 999999)), true))()
+	-- verificar reload ANTES de destruir
+	local _newCode
+	local _rstOk = pcall(function()
+		_newCode = loadstring(game:HttpGet("https://raw.githubusercontent.com/eidanexb-dotcom/-mis-scripts/refs/heads/main/esp.lua?nocache=" .. tostring(tick()) .. tostring(math.random(100000, 999999)), true))
 	end)
-	if not ok then _rstBusy = false end
-end)
+	if _rstOk and _newCode then
+		for pl, objs in pairs(_obj) do
+			for _, o in pairs(objs) do pcall(function() o:Destroy() end) end
+		end
+		pcall(function() _sg:Destroy() end)
+		pcall(function() _dsg:Destroy() end)
+		_G._ESP_LOADED = nil
+		task.wait(0.1)
+		_newCode()
+	else
+		warn("[Claudex] RST: reload failed — keeping current session")
+		_gen = _gen - 1
+		_ncb.Text = "NOCLIP: OFF"; _ncb.TextColor3 = C3_OFF
+		_brb.Text = "LUZ: OFF"; _brb.TextColor3 = C3_OFF
+		_dsb.Text = "DESLIZAMIENTO: OFF"; _dsb.TextColor3 = C3_OFF
+		_grb.Text = "GRAVEDAD 0: OFF"; _grb.TextColor3 = C3_OFF
+		_rstBusy = false
+	end
+end
+_rst.MouseButton1Click:Connect(_doRST)
 
 _lf = Instance.new("ScrollingFrame")
 _lf.Size = UDim2.new(0, 200, 0, 300)
@@ -517,15 +549,24 @@ local function _rl()
 			pad.Parent = btn
 
 			btn.MouseButton1Click:Connect(function()
+				if not p.Parent then return end
 				if not p.Character or not p.Character:FindFirstChild("HumanoidRootPart") then return end
 				if not LP.Character or not LP.Character:FindFirstChild("HumanoidRootPart") then return end
 				local myHRP = LP.Character.HumanoidRootPart
 				local head = p.Character:FindFirstChild("Head")
+				local function _unsit()
+					pcall(function() local h = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid"); if h then h.Sit = false end end)
+				end
+				local function _pleft()
+					if not p.Parent then _tc:Disconnect(); _mv = false; _unsit(); return true end
+					return false
+				end
 				if _tm == 1 then
 					if _mv and _tc then _tc:Disconnect() end
 					_mv = true
 					_tc = RS.Heartbeat:Connect(function(dt)
 						if not _mv then _tc:Disconnect() return end
+						if _pleft() then return end
 						local myRoot = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
 						if not myRoot then _tc:Disconnect(); _mv = false; return end
 						local tHead = p.Character and p.Character:FindFirstChild("Head")
@@ -533,76 +574,87 @@ local function _rl()
 						local target = tHead.Position + Vector3.new(0, 2, 0)
 						local dir3 = target - myRoot.Position
 						if dir3.Magnitude < 3 then
-							myRoot.CFrame = CFrame.new(target)
+							pcall(function() myRoot.CFrame = CFrame.new(target) end)
 							_tc:Disconnect()
 							_mv = false
 							return
 						end
 						pcall(function()
-							myRoot.Velocity = Vector3.new(0, 0, 0)
+							myRoot.Velocity = V3_ZERO
 							myRoot.CFrame = myRoot.CFrame + dir3.Unit * _spd * dt
 						end)
 					end)
 				elseif _tm == 2 then
 					if _mv and _tc then _tc:Disconnect() end
 					if not head then return end
-					myHRP.CFrame = CFrame.new(head.Position + Vector3.new(0, 2, 0))
-					local hum = LP.Character:FindFirstChildOfClass("Humanoid")
-					if hum then hum.Sit = true end
+					pcall(function()
+						myHRP.CFrame = CFrame.new(head.Position + Vector3.new(0, 2, 0))
+						local hum = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
+						if hum then hum.Sit = true end
+					end)
 					_mv = true
 					_tc = RS.Heartbeat:Connect(function()
 						if not _mv then _tc:Disconnect() return end
+						if _pleft() then return end
 						local myRoot = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
 						if not myRoot then _tc:Disconnect(); _mv = false; return end
 						local tHead = p.Character and p.Character:FindFirstChild("Head")
 						if not tHead then return end
 						pcall(function()
 							myRoot.CFrame = tHead.CFrame * CFrame.new(0, 2, 0)
-							myRoot.Velocity = Vector3.new(0, 0, 0)
+							myRoot.Velocity = V3_ZERO
 						end)
 					end)
 				elseif _tm == 3 then
 					if _mv and _tc then _tc:Disconnect() end
-					local tTorso = p.Character:FindFirstChild("UpperTorso") or p.Character:FindFirstChild("Torso")
+					local tTorso = p.Character and (p.Character:FindFirstChild("UpperTorso") or p.Character:FindFirstChild("Torso"))
 					if not tTorso then return end
-					myHRP.CFrame = tTorso.CFrame * CFrame.new(0, 1, 1.5) * CFrame.Angles(math.rad(-30), math.rad(180), 0)
-					local hum = LP.Character:FindFirstChildOfClass("Humanoid")
-					if hum then hum.Sit = true end
+					pcall(function()
+						myHRP.CFrame = tTorso.CFrame * CFrame.new(0, 1, 1.5) * CFrame.Angles(RAD_N30, RAD_180, 0)
+						local hum = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
+						if hum then hum.Sit = true end
+					end)
 					_mv = true
 					_tc = RS.Heartbeat:Connect(function()
 						if not _mv then _tc:Disconnect() return end
+						if _pleft() then return end
 						local myRoot = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
 						if not myRoot then _tc:Disconnect(); _mv = false; return end
 						local tT = p.Character and (p.Character:FindFirstChild("UpperTorso") or p.Character:FindFirstChild("Torso"))
 						if not tT then return end
 						pcall(function()
-							myRoot.CFrame = tT.CFrame * CFrame.new(0, 1, 1.5) * CFrame.Angles(math.rad(-30), math.rad(180), 0)
-							myRoot.Velocity = Vector3.new(0, 0, 0)
+							myRoot.CFrame = tT.CFrame * CFrame.new(0, 1, 1.5) * CFrame.Angles(RAD_N30, RAD_180, 0)
+							myRoot.Velocity = V3_ZERO
 						end)
 					end)
 				elseif _tm == 4 then
 					if _mv and _tc then _tc:Disconnect() end
-					local tTorso = p.Character:FindFirstChild("UpperTorso") or p.Character:FindFirstChild("Torso")
+					local tTorso = p.Character and (p.Character:FindFirstChild("UpperTorso") or p.Character:FindFirstChild("Torso"))
 					if not tTorso then return end
-					myHRP.CFrame = tTorso.CFrame * CFrame.new(0, -2.5, 1.8)
-					local hum = LP.Character:FindFirstChildOfClass("Humanoid")
-					if hum then hum.Sit = true end
+					pcall(function()
+						myHRP.CFrame = tTorso.CFrame * CFrame.new(0, -2.5, 1.8)
+						local hum = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
+						if hum then hum.Sit = true end
+					end)
 					_mv = true
 					_tc = RS.Heartbeat:Connect(function()
 						if not _mv then _tc:Disconnect() return end
+						if _pleft() then return end
 						local myRoot = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
 						if not myRoot then _tc:Disconnect(); _mv = false; return end
 						local tT = p.Character and (p.Character:FindFirstChild("UpperTorso") or p.Character:FindFirstChild("Torso"))
 						if not tT then return end
 						pcall(function()
-							local yupi = math.sin(tick() * _yupiSpd) * 0.6
+							local yupi = msin(tick() * _yupiSpd) * 0.6
 							myRoot.CFrame = tT.CFrame * CFrame.new(0, -2.5, 1.8 + yupi)
-							myRoot.Velocity = Vector3.new(0, 0, 0)
+							myRoot.Velocity = V3_ZERO
 						end)
 					end)
 				else
-					local tHRP = p.Character:FindFirstChild("HumanoidRootPart")
-					if tHRP then myHRP.CFrame = tHRP.CFrame * CFrame.new(0, 0, 5) end
+					pcall(function()
+						local tHRP = p.Character and p.Character:FindFirstChild("HumanoidRootPart")
+						if tHRP then myHRP.CFrame = tHRP.CFrame * CFrame.new(0, 0, 5) end
+					end)
 				end
 			end)
 		end
@@ -616,9 +668,11 @@ _tb.MouseButton1Click:Connect(function()
 end)
 
 Players.PlayerAdded:Connect(function()
+	if _gen ~= _mainGen then return end
 	if _lf.Visible then _rl() end
 end)
 Players.PlayerRemoving:Connect(function()
+	if _gen ~= _mainGen then return end
 	task.wait(0.5)
 	if _lf.Visible then _rl() end
 end)
@@ -627,9 +681,9 @@ end)
 _tg = Instance.new("TextButton")
 _tg.Size = UDim2.new(0, 55, 0, 25)
 _tg.Position = UDim2.new(0, 10, 0.5, -70)
-_tg.BackgroundColor3 = Color3.fromRGB(220, 120, 50)
+_tg.BackgroundColor3 = C3_CLAUDEX
 _tg.BackgroundTransparency = 0.2
-_tg.TextColor3 = Color3.new(1, 1, 1)
+_tg.TextColor3 = C3_WHITE
 _tg.Font = Enum.Font.GothamBold
 _tg.TextSize = 9
 _tg.Text = "✴ Claudex"
@@ -644,7 +698,7 @@ _tg.MouseButton1Click:Connect(function()
 	_rst.Visible = _open
 	if not _open then _lf.Visible = false end
 	_tg.Text = _open and "✴ Claudex" or ">>>"
-	_tg.BackgroundColor3 = _open and Color3.fromRGB(220, 120, 50) or Color3.fromRGB(50, 50, 50)
+	_tg.BackgroundColor3 = _open and C3_CLAUDEX or Color3.fromRGB(50, 50, 50)
 end)
 
 -- ============ DROPDOWN TOP ============
@@ -662,7 +716,7 @@ _brightOG = {}
 local _dtab = Instance.new("TextButton")
 _dtab.Size = UDim2.new(0, 110, 0, 20)
 _dtab.Position = UDim2.new(0.5, -55, 0, 0)
-_dtab.BackgroundColor3 = Color3.fromRGB(220, 120, 50)
+_dtab.BackgroundColor3 = C3_CLAUDEX
 _dtab.BackgroundTransparency = 0.2
 _dtab.TextColor3 = Color3.fromRGB(255, 255, 255)
 _dtab.Font = Enum.Font.GothamBold
@@ -673,7 +727,7 @@ _dtab.Parent = _dsg
 Instance.new("UICorner", _dtab).CornerRadius = UDim.new(0, 6)
 
 local _dpanel = Instance.new("ScrollingFrame")
-_dpanel.Size = UDim2.new(0, 300, 0, 165)
+_dpanel.Size = UDim2.new(0, 300, 0, 200)
 _dpanel.Position = UDim2.new(0.5, -150, -1, 0)
 _dpanel.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 _dpanel.BackgroundTransparency = 0.15
@@ -698,12 +752,50 @@ _dpad.PaddingLeft = UDim.new(0, 8)
 _dpad.PaddingRight = UDim.new(0, 8)
 _dpad.Parent = _dpanel
 
+local _dhdr = Instance.new("Frame")
+_dhdr.Size = UDim2.new(1, 0, 0, 28)
+_dhdr.BackgroundTransparency = 1
+_dhdr.LayoutOrder = 0
+_dhdr.Name = _rn()
+_dhdr.Parent = _dpanel
+
+local _dstar = Instance.new("TextLabel")
+_dstar.Size = UDim2.new(0, 28, 0, 28)
+_dstar.BackgroundTransparency = 1
+_dstar.Text = "✴"
+_dstar.TextColor3 = C3_CLAUDEX
+_dstar.Font = Enum.Font.GothamBold
+_dstar.TextSize = 20
+_dstar.Name = _rn()
+_dstar.Parent = _dhdr
+
+local _dtitle = Instance.new("TextLabel")
+_dtitle.Size = UDim2.new(1, -32, 0, 28)
+_dtitle.Position = UDim2.new(0, 32, 0, 0)
+_dtitle.BackgroundTransparency = 1
+_dtitle.Text = "CLAUDEX"
+_dtitle.TextColor3 = C3_CLAUDEX
+_dtitle.Font = Enum.Font.GothamBold
+_dtitle.TextSize = 14
+_dtitle.TextXAlignment = Enum.TextXAlignment.Left
+_dtitle.Name = _rn()
+_dtitle.Parent = _dhdr
+
+local _dline = Instance.new("Frame")
+_dline.Size = UDim2.new(1, 0, 0, 1)
+_dline.Position = UDim2.new(0, 0, 1, 0)
+_dline.BackgroundColor3 = C3_CLAUDEX
+_dline.BackgroundTransparency = 0.5
+_dline.BorderSizePixel = 0
+_dline.Name = _rn()
+_dline.Parent = _dhdr
+
 local function _dbtn(txt, order)
 	local b = Instance.new("TextButton")
 	b.Size = UDim2.new(1, 0, 0, 30)
 	b.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 	b.BackgroundTransparency = 0.3
-	b.TextColor3 = Color3.fromRGB(255, 80, 80)
+	b.TextColor3 = C3_OFF
 	b.Font = Enum.Font.GothamBold
 	b.TextSize = 11
 	b.Text = txt
@@ -714,15 +806,15 @@ local function _dbtn(txt, order)
 	return b
 end
 
-local _ncb = _dbtn("NOCLIP: OFF", 1)
-local _brb = _dbtn("LUZ: OFF", 2)
-local _dsb = _dbtn("DESLIZAMIENTO: OFF", 3)
-local _grb = _dbtn("GRAVEDAD 0: OFF", 5)
+_ncb = _dbtn("NOCLIP: OFF", 1)
+_brb = _dbtn("LUZ: OFF", 2)
+_dsb = _dbtn("DESLIZAMIENTO: OFF", 3)
+_grb = _dbtn("GRAVEDAD 0: OFF", 5)
 
 -- SLIDER YUPI
 local _yupiSpd = 10
 local _yupiMin = 1
-local _yupiMax = 1000
+local _yupiMax = 100
 
 _yuFrame = Instance.new("Frame")
 _yuFrame.Size = UDim2.new(1, 0, 0, 30)
@@ -736,7 +828,7 @@ local _yuLabel = Instance.new("TextLabel")
 _yuLabel.Size = UDim2.new(0, 65, 1, 0)
 _yuLabel.Position = UDim2.new(0, 0, 0, 0)
 _yuLabel.BackgroundTransparency = 1
-_yuLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
+_yuLabel.TextColor3 = C3_RED
 _yuLabel.Font = Enum.Font.GothamBold
 _yuLabel.TextSize = 9
 _yuLabel.Text = "YUPI: 10"
@@ -774,8 +866,8 @@ local _yuDrag = false
 local function _updateYupi(inputX)
 	local bgPos = _yuBg.AbsolutePosition.X
 	local bgSize = _yuBg.AbsoluteSize.X
-	local pct = math.clamp((inputX - bgPos) / bgSize, 0, 1)
-	_yupiSpd = math.floor(_yupiMin + pct * (_yupiMax - _yupiMin))
+	local pct = mclamp((inputX - bgPos) / bgSize, 0, 1)
+	_yupiSpd = mfloor(_yupiMin + pct * (_yupiMax - _yupiMin))
 	_yuFill.Size = UDim2.new(pct, 0, 1, 0)
 	_yuKnob.Position = UDim2.new(pct, -7, 0.5, -7)
 	_yuLabel.Text = "YUPI: " .. tostring(_yupiSpd)
@@ -788,6 +880,73 @@ _yuBg.InputBegan:Connect(function(input)
 	end
 end)
 
+
+-- SLIDER TP SPEED
+local _spMin = 50
+local _spMax = 500
+
+_spFrame = Instance.new("Frame")
+_spFrame.Size = UDim2.new(1, 0, 0, 30)
+_spFrame.BackgroundTransparency = 1
+_spFrame.LayoutOrder = 7
+_spFrame.Name = _rn()
+_spFrame.Visible = false
+_spFrame.Parent = _dpanel
+
+local _spLabel = Instance.new("TextLabel")
+_spLabel.Size = UDim2.new(0, 55, 1, 0)
+_spLabel.BackgroundTransparency = 1
+_spLabel.TextColor3 = Color3.fromRGB(255, 200, 0)
+_spLabel.Font = Enum.Font.GothamBold
+_spLabel.TextSize = 9
+_spLabel.Text = "TP: " .. _spd
+_spLabel.Name = _rn()
+_spLabel.Parent = _spFrame
+
+local _spBg = Instance.new("Frame")
+_spBg.Size = UDim2.new(1, -65, 0, 8)
+_spBg.Position = UDim2.new(0, 60, 0.5, -4)
+_spBg.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+_spBg.BorderSizePixel = 0
+_spBg.Name = _rn()
+_spBg.Parent = _spFrame
+Instance.new("UICorner", _spBg).CornerRadius = UDim.new(0, 4)
+
+local _spFill = Instance.new("Frame")
+_spFill.Size = UDim2.new((_spd - _spMin) / (_spMax - _spMin), 0, 1, 0)
+_spFill.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
+_spFill.BorderSizePixel = 0
+_spFill.Name = _rn()
+_spFill.Parent = _spBg
+Instance.new("UICorner", _spFill).CornerRadius = UDim.new(0, 4)
+
+local _spKnob = Instance.new("Frame")
+_spKnob.Size = UDim2.new(0, 14, 0, 14)
+_spKnob.Position = UDim2.new((_spd - _spMin) / (_spMax - _spMin), -7, 0.5, -7)
+_spKnob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+_spKnob.BorderSizePixel = 0
+_spKnob.Name = _rn()
+_spKnob.Parent = _spBg
+Instance.new("UICorner", _spKnob).CornerRadius = UDim.new(1, 0)
+
+local _spDrag = false
+
+local function _updateTpSpd(inputX)
+	local bgPos = _spBg.AbsolutePosition.X
+	local bgSize = _spBg.AbsoluteSize.X
+	local pct = mclamp((inputX - bgPos) / bgSize, 0, 1)
+	_spd = mfloor(_spMin + pct * (_spMax - _spMin))
+	_spFill.Size = UDim2.new(pct, 0, 1, 0)
+	_spKnob.Position = UDim2.new(pct, -7, 0.5, -7)
+	_spLabel.Text = "TP: " .. _spd
+end
+
+_spBg.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		_spDrag = true
+		_updateTpSpd(input.Position.X)
+	end
+end)
 
 -- SLIDER VELOCIDAD
 _slide = false
@@ -844,11 +1003,12 @@ local _dragging = false
 local function _updateSlider(inputX)
 	local bgPos = _slBg.AbsolutePosition.X
 	local bgSize = _slBg.AbsoluteSize.X
-	local pct = math.clamp((inputX - bgPos) / bgSize, 0, 1)
-	_slideSpd = math.floor(_slideMin + pct * (_slideMax - _slideMin))
+	local pct = mclamp((inputX - bgPos) / bgSize, 0, 1)
+	_slideSpd = mfloor(_slideMin + pct * (_slideMax - _slideMin))
 	_slFill.Size = UDim2.new(pct, 0, 1, 0)
 	_slKnob.Position = UDim2.new(pct, -7, 0.5, -7)
 	_slLabel.Text = tostring(_slideSpd)
+	if _slide then _dsb.Text = "DESLIZ: " .. _slideSpd end
 end
 
 _slBg.InputBegan:Connect(function(input)
@@ -859,54 +1019,65 @@ _slBg.InputBegan:Connect(function(input)
 end)
 
 UIS.InputChanged:Connect(function(input)
+	if _gen ~= _mainGen then return end
 	if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
 		if _dragging then _updateSlider(input.Position.X) end
 		if _yuDrag then _updateYupi(input.Position.X) end
+		if _spDrag then _updateTpSpd(input.Position.X) end
 	end
 end)
 
 UIS.InputEnded:Connect(function(input)
+	if _gen ~= _mainGen then return end
 	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
 		_dragging = false
 		_yuDrag = false
+		_spDrag = false
 	end
 end)
 
 -- NOCLIP
-_ncb.MouseButton1Click:Connect(function()
+local function _cacheNcParts()
+	_ncParts = {}
+	local ch = LP.Character
+	if not ch then return end
+	for _, p in ipairs(ch:GetDescendants()) do
+		if p:IsA("BasePart") then tinsert(_ncParts, p) end
+	end
+end
+
+local function _toggleNoclip()
 	_noclip = not _noclip
 	if _noclip then
 		_ncb.Text = "NOCLIP: ON"
-		_ncb.TextColor3 = Color3.fromRGB(0, 255, 100)
+		_ncb.TextColor3 = C3_ON
+		_cacheNcParts()
 		_nccon = RS.Stepped:Connect(function()
 			if not _noclip then return end
-			local ch = LP.Character
-			if not ch then return end
-			for _, p in ipairs(ch:GetDescendants()) do
-				if p:IsA("BasePart") then p.CanCollide = false end
+			for i = 1, #_ncParts do
+				local p = _ncParts[i]
+				if p and p.Parent then p.CanCollide = false end
 			end
 		end)
 	else
 		_ncb.Text = "NOCLIP: OFF"
-		_ncb.TextColor3 = Color3.fromRGB(255, 80, 80)
+		_ncb.TextColor3 = C3_OFF
 		if _nccon then _nccon:Disconnect(); _nccon = nil end
-		pcall(function()
-			local ch = LP.Character
-			if ch then
-				for _, p in ipairs(ch:GetDescendants()) do
-					if p:IsA("BasePart") then p.CanCollide = true end
-				end
-			end
-		end)
+		for i = 1, #_ncParts do
+			local p = _ncParts[i]
+			if p and p.Parent then p.CanCollide = true end
+		end
+		_ncParts = {}
 	end
-end)
+end
+_ncb.MouseButton1Click:Connect(_toggleNoclip)
 
 -- FULLBRIGHT
-_brb.MouseButton1Click:Connect(function()
+local function _toggleBright()
 	_bright = not _bright
 	if _bright then
 		_brb.Text = "LUZ: ON"
-		_brb.TextColor3 = Color3.fromRGB(0, 255, 100)
+		_brb.TextColor3 = C3_ON
 		_brightOG = {
 			amb = Lighting.Ambient,
 			out = Lighting.OutdoorAmbient,
@@ -914,8 +1085,8 @@ _brb.MouseButton1Click:Connect(function()
 			fog = Lighting.FogEnd,
 			time = Lighting.ClockTime
 		}
-		Lighting.Ambient = Color3.new(1, 1, 1)
-		Lighting.OutdoorAmbient = Color3.new(1, 1, 1)
+		Lighting.Ambient = C3_WHITE
+		Lighting.OutdoorAmbient = C3_WHITE
 		Lighting.Brightness = 2
 		Lighting.FogEnd = 1e9
 		Lighting.ClockTime = 14
@@ -926,7 +1097,7 @@ _brb.MouseButton1Click:Connect(function()
 		end
 	else
 		_brb.Text = "LUZ: OFF"
-		_brb.TextColor3 = Color3.fromRGB(255, 80, 80)
+		_brb.TextColor3 = C3_OFF
 		if _brightOG.amb then
 			Lighting.Ambient = _brightOG.amb
 			Lighting.OutdoorAmbient = _brightOG.out
@@ -940,25 +1111,28 @@ _brb.MouseButton1Click:Connect(function()
 			end
 		end
 	end
-end)
+end
+_brb.MouseButton1Click:Connect(_toggleBright)
 
 -- DESLIZAMIENTO
-_dsb.MouseButton1Click:Connect(function()
+local function _toggleSlide()
 	_slide = not _slide
 	if _slide then
-		_dsb.Text = "DESLIZAMIENTO: ON"
-		_dsb.TextColor3 = Color3.fromRGB(0, 255, 100)
+		_dsb.Text = "DESLIZ: " .. _slideSpd
+		_dsb.TextColor3 = C3_ON
 	else
 		_dsb.Text = "DESLIZAMIENTO: OFF"
-		_dsb.TextColor3 = Color3.fromRGB(255, 80, 80)
+		_dsb.TextColor3 = C3_OFF
 		pcall(function()
 			local hum = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
 			if hum then hum.WalkSpeed = 16 end
 		end)
 	end
-end)
+end
+_dsb.MouseButton1Click:Connect(_toggleSlide)
 
 RS.Heartbeat:Connect(function()
+	if _gen ~= _mainGen then return end
 	if _tick % 4 == 0 and _slide then
 		pcall(function()
 			local hum = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
@@ -968,7 +1142,9 @@ RS.Heartbeat:Connect(function()
 end)
 
 LP.CharacterAdded:Connect(function()
+	if _gen ~= _mainGen then return end
 	task.wait(0.5)
+	if _noclip then _cacheNcParts() end
 	if _slide then
 		pcall(function()
 			local hum = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
@@ -982,30 +1158,32 @@ _grav = false
 _gravOG = nil
 _gravCon = nil
 
-_grb.MouseButton1Click:Connect(function()
+local function _toggleGrav()
 	_grav = not _grav
 	if _grav then
 		_grb.Text = "GRAVEDAD 0: ON"
-		_grb.TextColor3 = Color3.fromRGB(0, 255, 100)
+		_grb.TextColor3 = C3_ON
 		_gravOG = game.Workspace.Gravity
 		game.Workspace.Gravity = 25
 		_gravCon = RS.Heartbeat:Connect(function()
 			if not _grav then return end
+			if _tick % 15 ~= 0 then return end
 			if game.Workspace.Gravity ~= 25 then
 				game.Workspace.Gravity = 25
 			end
 		end)
 	else
 		_grb.Text = "GRAVEDAD 0: OFF"
-		_grb.TextColor3 = Color3.fromRGB(255, 80, 80)
+		_grb.TextColor3 = C3_OFF
 		if _gravCon then _gravCon:Disconnect(); _gravCon = nil end
 		game.Workspace.Gravity = _gravOG or 196.2
 	end
-end)
+end
+_grb.MouseButton1Click:Connect(_toggleGrav)
 
 local _tinfo = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 
-_dtab.MouseButton1Click:Connect(function()
+local function _toggleDropdown()
 	_dopen = not _dopen
 	if _dopen then
 		TweenService:Create(_dpanel, _tinfo, {Position = UDim2.new(0.5, -150, 0, 22)}):Play()
@@ -1014,12 +1192,34 @@ _dtab.MouseButton1Click:Connect(function()
 		TweenService:Create(_dpanel, _tinfo, {Position = UDim2.new(0.5, -150, -1, 0)}):Play()
 		_dtab.Text = "▼ ✴ Claudex ▼"
 	end
+end
+_dtab.MouseButton1Click:Connect(_toggleDropdown)
+
+-- ============ KEYBINDS ============
+UIS.InputBegan:Connect(function(input, gpe)
+	if _gen ~= _mainGen then return end
+	if gpe then return end
+	local kc = input.KeyCode
+	if kc == Enum.KeyCode.F2 then _toggleNoclip()
+	elseif kc == Enum.KeyCode.F3 then _toggleBright()
+	elseif kc == Enum.KeyCode.F4 then _toggleSlide()
+	elseif kc == Enum.KeyCode.F5 then _toggleGrav()
+	elseif kc == Enum.KeyCode.F6 then _toggleDropdown()
+	elseif kc == Enum.KeyCode.F8 then _doRST()
+	end
 end)
 
 -- ============ INIT ============
 _AT._obj = _obj
 _AT.startWatchdog(5)
-for _, p in ipairs(Players:GetPlayers()) do _make(p); _td(p) end
-Players.PlayerAdded:Connect(function(p) _make(p); _td(p) end)
+local function _initPlayer(p)
+	if _pcons[p] then
+		for _, c in pairs(_pcons[p]) do pcall(function() c:Disconnect() end) end
+		_pcons[p] = nil
+	end
+	_make(p); _td(p)
+end
+for _, p in ipairs(Players:GetPlayers()) do _initPlayer(p) end
+Players.PlayerAdded:Connect(function(p) _initPlayer(p) end)
 Players.PlayerRemoving:Connect(_del)
 _md()
