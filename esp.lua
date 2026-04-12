@@ -625,14 +625,14 @@ end)
 
 -- ============ MENU TOGGLE ============
 _tg = Instance.new("TextButton")
-_tg.Size = UDim2.new(0, 40, 0, 25)
+_tg.Size = UDim2.new(0, 55, 0, 25)
 _tg.Position = UDim2.new(0, 10, 0.5, -70)
-_tg.BackgroundColor3 = Color3.fromRGB(0, 130, 255)
-_tg.BackgroundTransparency = 0.3
+_tg.BackgroundColor3 = Color3.fromRGB(220, 120, 50)
+_tg.BackgroundTransparency = 0.2
 _tg.TextColor3 = Color3.new(1, 1, 1)
 _tg.Font = Enum.Font.GothamBold
-_tg.TextSize = 10
-_tg.Text = "ESP"
+_tg.TextSize = 9
+_tg.Text = "✴ Claudex"
 _tg.Name = _rn()
 _tg.Parent = _sg
 Instance.new("UICorner", _tg).CornerRadius = UDim.new(0, 8)
@@ -643,8 +643,8 @@ _tg.MouseButton1Click:Connect(function()
 	_mb.Visible = _open
 	_rst.Visible = _open
 	if not _open then _lf.Visible = false end
-	_tg.Text = _open and "ESP" or ">>>"
-	_tg.BackgroundColor3 = _open and Color3.fromRGB(0, 130, 255) or Color3.fromRGB(50, 50, 50)
+	_tg.Text = _open and "✴ Claudex" or ">>>"
+	_tg.BackgroundColor3 = _open and Color3.fromRGB(220, 120, 50) or Color3.fromRGB(50, 50, 50)
 end)
 
 -- ============ DROPDOWN TOP ============
@@ -660,14 +660,14 @@ _bright = false
 _brightOG = {}
 
 local _dtab = Instance.new("TextButton")
-_dtab.Size = UDim2.new(0, 80, 0, 20)
-_dtab.Position = UDim2.new(0.5, -40, 0, 0)
-_dtab.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+_dtab.Size = UDim2.new(0, 110, 0, 20)
+_dtab.Position = UDim2.new(0.5, -55, 0, 0)
+_dtab.BackgroundColor3 = Color3.fromRGB(220, 120, 50)
 _dtab.BackgroundTransparency = 0.2
 _dtab.TextColor3 = Color3.fromRGB(255, 255, 255)
 _dtab.Font = Enum.Font.GothamBold
 _dtab.TextSize = 10
-_dtab.Text = "▼ MENU ▼"
+_dtab.Text = "▼ ✴ Claudex ▼"
 _dtab.Name = _rn()
 _dtab.Parent = _dsg
 Instance.new("UICorner", _dtab).CornerRadius = UDim.new(0, 6)
@@ -1009,10 +1009,10 @@ _dtab.MouseButton1Click:Connect(function()
 	_dopen = not _dopen
 	if _dopen then
 		TweenService:Create(_dpanel, _tinfo, {Position = UDim2.new(0.5, -150, 0, 22)}):Play()
-		_dtab.Text = "▲ MENU ▲"
+		_dtab.Text = "▲ ✴ Claudex ▲"
 	else
 		TweenService:Create(_dpanel, _tinfo, {Position = UDim2.new(0.5, -150, -1, 0)}):Play()
-		_dtab.Text = "▼ MENU ▼"
+		_dtab.Text = "▼ ✴ Claudex ▼"
 	end
 end)
 
