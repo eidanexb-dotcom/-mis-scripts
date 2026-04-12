@@ -393,7 +393,7 @@ _rst.MouseButton1Click:Connect(function()
 	_ESP_LOADED = nil
 	task.wait(0.3)
 	pcall(function()
-		loadstring(game:HttpGet("https://raw.githubusercontent.com/eidanexb-dotcom/-mis-scripts/refs/heads/main/esp.lua"))()
+		loadstring(game:HttpGet("https://raw.githubusercontent.com/eidanexb-dotcom/-mis-scripts/refs/heads/main/esp.lua?t=" .. tostring(tick())))()
 	end)
 end)
 
@@ -566,7 +566,7 @@ Instance.new("UICorner", _dtab).CornerRadius = UDim.new(0, 6)
 
 local _dpanel = Instance.new("Frame")
 _dpanel.Size = UDim2.new(0, 300, 0, 195)
-_dpanel.Position = UDim2.new(0.5, -150, 0, -195)
+_dpanel.Position = UDim2.new(0.5, -150, 0, -210)
 _dpanel.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 _dpanel.BackgroundTransparency = 0.15
 _dpanel.BorderSizePixel = 0
@@ -788,6 +788,7 @@ end)
 -- GRAVEDAD 0
 local _grav = false
 local _gravOG = nil
+local _gravCon = nil
 
 _grb.MouseButton1Click:Connect(function()
 	_grav = not _grav
@@ -795,10 +796,17 @@ _grb.MouseButton1Click:Connect(function()
 		_grb.Text = "GRAVEDAD 0: ON"
 		_grb.TextColor3 = Color3.fromRGB(0, 255, 100)
 		_gravOG = game.Workspace.Gravity
-		game.Workspace.Gravity = 1
+		game.Workspace.Gravity = 25
+		_gravCon = RS.Heartbeat:Connect(function()
+			if not _grav then return end
+			if game.Workspace.Gravity ~= 25 then
+				game.Workspace.Gravity = 25
+			end
+		end)
 	else
 		_grb.Text = "GRAVEDAD 0: OFF"
 		_grb.TextColor3 = Color3.fromRGB(255, 80, 80)
+		if _gravCon then _gravCon:Disconnect(); _gravCon = nil end
 		game.Workspace.Gravity = _gravOG or 196.2
 	end
 end)
@@ -808,10 +816,15 @@ local _tinfo = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Ou
 _dtab.MouseButton1Click:Connect(function()
 	_dopen = not _dopen
 	if _dopen then
+		_dpanel.Visible = true
 		TweenService:Create(_dpanel, _tinfo, {Position = UDim2.new(0.5, -150, 0, 22)}):Play()
 		_dtab.Text = "▲ MENU ▲"
 	else
-		TweenService:Create(_dpanel, _tinfo, {Position = UDim2.new(0.5, -150, 0, -195)}):Play()
+		local tw = TweenService:Create(_dpanel, _tinfo, {Position = UDim2.new(0.5, -150, 0, -210)})
+		tw:Play()
+		tw.Completed:Connect(function()
+			if not _dopen then _dpanel.Visible = false end
+		end)
 		_dtab.Text = "▼ MENU ▼"
 	end
 end)
