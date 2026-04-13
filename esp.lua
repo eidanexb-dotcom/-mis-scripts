@@ -959,78 +959,10 @@ _brb = _dbtn("LUZ: OFF", 2)
 _dsb = _dbtn("DESLIZAMIENTO: OFF", 3)
 _grb = _dbtn("GRAVEDAD 0: OFF", 5)
 
--- BOTON PARTIDO INVI + AJUS (en pantalla)
-local _ivFrame = Instance.new("Frame")
-_ivFrame.Size = UDim2.new(0, 100, 0, 30)
-_ivFrame.Position = UDim2.new(0.5, -50, 0.85, 0)
-_ivFrame.BackgroundTransparency = 1
-_ivFrame.Name = _rn()
-_ivFrame.Parent = _sg
-
-_ivL = Instance.new("TextButton")
-_ivL.Size = UDim2.new(0.5, -1, 1, 0)
-_ivL.Position = UDim2.new(0, 0, 0, 0)
-_ivL.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-_ivL.BackgroundTransparency = 0.2
-_ivL.TextColor3 = C3_OFF
-_ivL.Font = Enum.Font.GothamBold
-_ivL.TextSize = 9
-_ivL.Text = "INVI"
-_ivL.Name = _rn()
-_ivL.Parent = _ivFrame
-Instance.new("UICorner", _ivL).CornerRadius = UDim.new(0, 6)
-
-local _ivR = Instance.new("TextButton")
-_ivR.Size = UDim2.new(0.5, -1, 1, 0)
-_ivR.Position = UDim2.new(0.5, 1, 0, 0)
-_ivR.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-_ivR.BackgroundTransparency = 0.2
-_ivR.TextColor3 = C3_OFF
-_ivR.Font = Enum.Font.GothamBold
-_ivR.TextSize = 9
-_ivR.Text = "AJUS"
-_ivR.Name = _rn()
-_ivR.Parent = _ivFrame
-Instance.new("UICorner", _ivR).CornerRadius = UDim.new(0, 6)
-
-local _ajust = false
-local _ajDrag = false
-local _ajOffset = nil
-
--- INVI: ejecuta/mata el ofuscado
+-- INVI ON/OFF (en dropdown)
+_ivL = _dbtn("INVI: OFF", 9)
 _ivL.MouseButton1Click:Connect(function()
-	if _ajust then return end
 	_toggleInvis()
-end)
-
--- AJUS: mover el boton partido
-_ivR.MouseButton1Click:Connect(function()
-	_ajust = not _ajust
-	_ivR.TextColor3 = _ajust and C3_ON or C3_OFF
-end)
-
-_ivFrame.InputBegan:Connect(function(input)
-	if not _ajust then return end
-	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-		_ajDrag = true
-		_ajOffset = Vector2.new(input.Position.X, input.Position.Y) - Vector2.new(_ivFrame.AbsolutePosition.X, _ivFrame.AbsolutePosition.Y)
-	end
-end)
-
-UIS.InputChanged:Connect(function(input)
-	if _gen ~= _mainGen then return end
-	if not _ajDrag then return end
-	if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-		local pos = Vector2.new(input.Position.X, input.Position.Y) - _ajOffset
-		_ivFrame.Position = UDim2.new(0, pos.X, 0, pos.Y)
-	end
-end)
-
-UIS.InputEnded:Connect(function(input)
-	if _gen ~= _mainGen then return end
-	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-		_ajDrag = false
-	end
 end)
 
 -- SLIDER YUPI
