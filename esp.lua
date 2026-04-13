@@ -116,6 +116,7 @@ local C3_OFF = Color3.fromRGB(255, 80, 80)
 local C3_CLAUDEX = Color3.fromRGB(220, 120, 50)
 local V3_ZERO = Vector3.zero or Vector3.new(0, 0, 0)
 local RAD_N30 = math.rad(-30)
+local RAD_90 = math.rad(90)
 local RAD_180 = math.rad(180)
 
 local _obj = {}
@@ -331,6 +332,100 @@ local function _md()
 	LP.CharacterAdded:Connect(function(c) if _gen ~= _mg then return end _om(c) end)
 end
 
+-- ============ LOADING ============
+do
+	local TW = game:GetService("TweenService")
+	local _lsg = _gui()
+	local ti = TweenInfo.new
+
+	local bg = Instance.new("Frame")
+	bg.Size = UDim2.new(1, 0, 1, 0)
+	bg.BackgroundColor3 = C3_BLACK
+	bg.BackgroundTransparency = 0.3
+	bg.BorderSizePixel = 0
+	bg.Parent = _lsg
+
+	local star = Instance.new("TextLabel")
+	star.Size = UDim2.new(0, 60, 0, 60)
+	star.Position = UDim2.new(0.5, -30, 0.4, -30)
+	star.BackgroundTransparency = 1
+	star.Text = "\226\156\180"
+	star.TextColor3 = C3_CLAUDEX
+	star.Font = Enum.Font.GothamBold
+	star.TextSize = 50
+	star.TextTransparency = 1
+	star.Parent = bg
+
+	local ttl = Instance.new("TextLabel")
+	ttl.Size = UDim2.new(0, 200, 0, 30)
+	ttl.Position = UDim2.new(0.5, -100, 0.4, 35)
+	ttl.BackgroundTransparency = 1
+	ttl.Text = "CLAUDEX"
+	ttl.TextColor3 = C3_CLAUDEX
+	ttl.Font = Enum.Font.GothamBold
+	ttl.TextSize = 24
+	ttl.TextTransparency = 1
+	ttl.Parent = bg
+
+	local barBg = Instance.new("Frame")
+	barBg.Size = UDim2.new(0, 200, 0, 4)
+	barBg.Position = UDim2.new(0.5, -100, 0.4, 75)
+	barBg.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+	barBg.BorderSizePixel = 0
+	barBg.BackgroundTransparency = 1
+	barBg.Parent = bg
+	Instance.new("UICorner", barBg).CornerRadius = UDim.new(0, 2)
+
+	local barF = Instance.new("Frame")
+	barF.Size = UDim2.new(0, 0, 1, 0)
+	barF.BackgroundColor3 = C3_CLAUDEX
+	barF.BorderSizePixel = 0
+	barF.BackgroundTransparency = 1
+	barF.Parent = barBg
+	Instance.new("UICorner", barF).CornerRadius = UDim.new(0, 2)
+
+	local ver = Instance.new("TextLabel")
+	ver.Size = UDim2.new(0, 200, 0, 20)
+	ver.Position = UDim2.new(0.5, -100, 0.4, 85)
+	ver.BackgroundTransparency = 1
+	ver.Text = "v2.0"
+	ver.TextColor3 = Color3.fromRGB(150, 150, 150)
+	ver.Font = Enum.Font.Gotham
+	ver.TextSize = 10
+	ver.TextTransparency = 1
+	ver.Parent = bg
+
+	TW:Create(star, ti(0.4, Enum.EasingStyle.Quad), {TextTransparency = 0}):Play()
+	TW:Create(ttl, ti(0.5, Enum.EasingStyle.Quad), {TextTransparency = 0}):Play()
+	TW:Create(barBg, ti(0.3, Enum.EasingStyle.Quad), {BackgroundTransparency = 0}):Play()
+	TW:Create(barF, ti(0.3, Enum.EasingStyle.Quad), {BackgroundTransparency = 0}):Play()
+	TW:Create(ver, ti(0.5, Enum.EasingStyle.Quad), {TextTransparency = 0}):Play()
+
+	task.wait(0.3)
+	TW:Create(barF, ti(1.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(1, 0, 1, 0)}):Play()
+
+	task.spawn(function()
+		for i = 1, 3 do
+			TW:Create(star, ti(0.2, Enum.EasingStyle.Quad), {TextSize = 55}):Play()
+			task.wait(0.2)
+			TW:Create(star, ti(0.2, Enum.EasingStyle.Quad), {TextSize = 45}):Play()
+			task.wait(0.2)
+		end
+	end)
+
+	task.wait(1.5)
+
+	TW:Create(bg, ti(0.4, Enum.EasingStyle.Quad), {BackgroundTransparency = 1}):Play()
+	TW:Create(star, ti(0.3, Enum.EasingStyle.Quad), {TextTransparency = 1}):Play()
+	TW:Create(ttl, ti(0.3, Enum.EasingStyle.Quad), {TextTransparency = 1}):Play()
+	TW:Create(barBg, ti(0.3, Enum.EasingStyle.Quad), {BackgroundTransparency = 1}):Play()
+	TW:Create(barF, ti(0.3, Enum.EasingStyle.Quad), {BackgroundTransparency = 1}):Play()
+	TW:Create(ver, ti(0.3, Enum.EasingStyle.Quad), {TextTransparency = 1}):Play()
+
+	task.wait(0.5)
+	_lsg:Destroy()
+end
+
 -- ============ TP ============
 local _sg = _gui()
 _AT._sg = _sg
@@ -348,8 +443,9 @@ local _noclip, _nccon
 local _ncParts = {}
 local _bright, _brightOG
 local _slide
-local _grav, _gravOG, _gravCon
+local _grav, _gravOG, _gravCon, _gravGyro
 local _ncb, _brb, _dsb, _grb
+local _yupiSpd = 10
 local Lighting = game:GetService("Lighting")
 
 local _tb = Instance.new("TextButton")
@@ -443,6 +539,7 @@ local function _doRST()
 	if _grav then
 		_grav = false
 		if _gravCon then pcall(function() _gravCon:Disconnect() end); _gravCon = nil end
+		if _gravGyro then pcall(function() _gravGyro:Destroy() end); _gravGyro = nil end
 		pcall(function() game.Workspace.Gravity = _gravOG or 196.2 end)
 	end
 	-- restaurar luz
@@ -471,29 +568,18 @@ local function _doRST()
 			if hum then hum.WalkSpeed = 16 end
 		end)
 	end
-	-- verificar reload ANTES de destruir
-	local _newCode
-	local _rstOk = pcall(function()
-		_newCode = loadstring(game:HttpGet("https://raw.githubusercontent.com/eidanexb-dotcom/-mis-scripts/refs/heads/main/esp.lua?nocache=" .. tostring(tick()) .. tostring(math.random(100000, 999999)), true))
-	end)
-	if _rstOk and _newCode then
-		for pl, objs in pairs(_obj) do
-			for _, o in pairs(objs) do pcall(function() o:Destroy() end) end
-		end
-		pcall(function() _sg:Destroy() end)
-		pcall(function() _dsg:Destroy() end)
-		_G._ESP_LOADED = nil
-		task.wait(0.1)
-		_newCode()
-	else
-		warn("[Claudex] RST: reload failed — keeping current session")
-		_gen = _gen - 1
-		_ncb.Text = "NOCLIP: OFF"; _ncb.TextColor3 = C3_OFF
-		_brb.Text = "LUZ: OFF"; _brb.TextColor3 = C3_OFF
-		_dsb.Text = "DESLIZAMIENTO: OFF"; _dsb.TextColor3 = C3_OFF
-		_grb.Text = "GRAVEDAD 0: OFF"; _grb.TextColor3 = C3_OFF
-		_rstBusy = false
+	-- destruir todo y recargar desde GitHub
+	for pl, objs in pairs(_obj) do
+		for _, o in pairs(objs) do pcall(function() o:Destroy() end) end
 	end
+	pcall(function() _sg:Destroy() end)
+	pcall(function() _dsg:Destroy() end)
+	_G._ESP_LOADED = nil
+	task.wait(0.3)
+	local ok = pcall(function()
+		loadstring(game:HttpGet("https://raw.githubusercontent.com/eidanexb-dotcom/-mis-scripts/refs/heads/main/esp.lua?nocache=" .. tostring(tick()) .. tostring(math.random(100000, 999999)), true))()
+	end)
+	if not ok then _rstBusy = false end
 end
 _rst.MouseButton1Click:Connect(_doRST)
 
@@ -586,9 +672,11 @@ local function _rl()
 					end)
 				elseif _tm == 2 then
 					if _mv and _tc then _tc:Disconnect() end
-					if not head then return end
+					local tTop = head or (p.Character and (p.Character:FindFirstChild("UpperTorso") or p.Character:FindFirstChild("Torso")))
+					if not tTop then return end
+					local _sOff = head and 2 or 3.5
 					pcall(function()
-						myHRP.CFrame = CFrame.new(head.Position + Vector3.new(0, 2, 0))
+						myHRP.CFrame = CFrame.new(tTop.Position + Vector3.new(0, _sOff, 0))
 						local hum = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
 						if hum then hum.Sit = true end
 					end)
@@ -598,10 +686,11 @@ local function _rl()
 						if _pleft() then return end
 						local myRoot = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
 						if not myRoot then _tc:Disconnect(); _mv = false; return end
-						local tHead = p.Character and p.Character:FindFirstChild("Head")
-						if not tHead then return end
+						local tH = p.Character and (p.Character:FindFirstChild("Head") or p.Character:FindFirstChild("UpperTorso") or p.Character:FindFirstChild("Torso"))
+						if not tH then return end
+						local off = p.Character:FindFirstChild("Head") and 2 or 3.5
 						pcall(function()
-							myRoot.CFrame = tHead.CFrame * CFrame.new(0, 2, 0)
+							myRoot.CFrame = tH.CFrame * CFrame.new(0, off, 0)
 							myRoot.Velocity = V3_ZERO
 						end)
 					end)
@@ -610,7 +699,7 @@ local function _rl()
 					local tTorso = p.Character and (p.Character:FindFirstChild("UpperTorso") or p.Character:FindFirstChild("Torso"))
 					if not tTorso then return end
 					pcall(function()
-						myHRP.CFrame = tTorso.CFrame * CFrame.new(0, 1, 1.5) * CFrame.Angles(RAD_N30, RAD_180, 0)
+						myHRP.CFrame = tTorso.CFrame * CFrame.new(0, 0, 1.2) * CFrame.Angles(RAD_180, 0, RAD_90)
 						local hum = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
 						if hum then hum.Sit = true end
 					end)
@@ -623,7 +712,7 @@ local function _rl()
 						local tT = p.Character and (p.Character:FindFirstChild("UpperTorso") or p.Character:FindFirstChild("Torso"))
 						if not tT then return end
 						pcall(function()
-							myRoot.CFrame = tT.CFrame * CFrame.new(0, 1, 1.5) * CFrame.Angles(RAD_N30, RAD_180, 0)
+							myRoot.CFrame = tT.CFrame * CFrame.new(0, 0, 1.2) * CFrame.Angles(RAD_180, 0, RAD_90)
 							myRoot.Velocity = V3_ZERO
 						end)
 					end)
@@ -632,7 +721,7 @@ local function _rl()
 					local tTorso = p.Character and (p.Character:FindFirstChild("UpperTorso") or p.Character:FindFirstChild("Torso"))
 					if not tTorso then return end
 					pcall(function()
-						myHRP.CFrame = tTorso.CFrame * CFrame.new(0, -2.5, 1.8)
+						myHRP.CFrame = tTorso.CFrame * CFrame.new(0, 1, 1.5)
 						local hum = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
 						if hum then hum.Sit = true end
 					end)
@@ -646,7 +735,7 @@ local function _rl()
 						if not tT then return end
 						pcall(function()
 							local yupi = msin(tick() * _yupiSpd) * 0.6
-							myRoot.CFrame = tT.CFrame * CFrame.new(0, -2.5, 1.8 + yupi)
+							myRoot.CFrame = tT.CFrame * CFrame.new(0, 1, 1.5 + yupi)
 							myRoot.Velocity = V3_ZERO
 						end)
 					end)
@@ -686,7 +775,7 @@ _tg.BackgroundTransparency = 0.2
 _tg.TextColor3 = C3_WHITE
 _tg.Font = Enum.Font.GothamBold
 _tg.TextSize = 9
-_tg.Text = "✴ Claudex"
+_tg.Text = ">>>"
 _tg.Name = _rn()
 _tg.Parent = _sg
 Instance.new("UICorner", _tg).CornerRadius = UDim.new(0, 8)
@@ -697,7 +786,7 @@ _tg.MouseButton1Click:Connect(function()
 	_mb.Visible = _open
 	_rst.Visible = _open
 	if not _open then _lf.Visible = false end
-	_tg.Text = _open and "✴ Claudex" or ">>>"
+	_tg.Text = ">>>"
 	_tg.BackgroundColor3 = _open and C3_CLAUDEX or Color3.fromRGB(50, 50, 50)
 end)
 
@@ -812,7 +901,6 @@ _dsb = _dbtn("DESLIZAMIENTO: OFF", 3)
 _grb = _dbtn("GRAVEDAD 0: OFF", 5)
 
 -- SLIDER YUPI
-local _yupiSpd = 10
 local _yupiMin = 1
 local _yupiMax = 100
 
@@ -1145,6 +1233,7 @@ LP.CharacterAdded:Connect(function()
 	if _gen ~= _mainGen then return end
 	task.wait(0.5)
 	if _noclip then _cacheNcParts() end
+	if _grav then _applyGyro() end
 	if _slide then
 		pcall(function()
 			local hum = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
@@ -1158,24 +1247,42 @@ _grav = false
 _gravOG = nil
 _gravCon = nil
 
+local function _applyGyro()
+	pcall(function()
+		if _gravGyro then _gravGyro:Destroy() end
+		_gravGyro = nil
+		local hrp = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
+		if hrp then
+			_gravGyro = Instance.new("BodyGyro")
+			_gravGyro.MaxTorque = Vector3.new(400000, 0, 400000)
+			_gravGyro.P = 10000
+			_gravGyro.D = 500
+			_gravGyro.CFrame = hrp.CFrame
+			_gravGyro.Parent = hrp
+		end
+	end)
+end
+
 local function _toggleGrav()
 	_grav = not _grav
 	if _grav then
 		_grb.Text = "GRAVEDAD 0: ON"
 		_grb.TextColor3 = C3_ON
 		_gravOG = game.Workspace.Gravity
-		game.Workspace.Gravity = 25
+		game.Workspace.Gravity = 2
+		_applyGyro()
 		_gravCon = RS.Heartbeat:Connect(function()
 			if not _grav then return end
 			if _tick % 15 ~= 0 then return end
 			if game.Workspace.Gravity ~= 25 then
-				game.Workspace.Gravity = 25
+				game.Workspace.Gravity = 2
 			end
 		end)
 	else
 		_grb.Text = "GRAVEDAD 0: OFF"
 		_grb.TextColor3 = C3_OFF
 		if _gravCon then _gravCon:Disconnect(); _gravCon = nil end
+		if _gravGyro then pcall(function() _gravGyro:Destroy() end); _gravGyro = nil end
 		game.Workspace.Gravity = _gravOG or 196.2
 	end
 end
