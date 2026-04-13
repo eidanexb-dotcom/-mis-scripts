@@ -1,3 +1,9 @@
+--[[
+	✴ CLAUDEX v3.0
+	Por: Eidanex & Claude MYTHOS
+	ScriptBlox: scriptblox.com
+]]--
+
 if _G._ESP_LOADED then return end
 _G._ESP_LOADED = true
 
@@ -622,7 +628,7 @@ local function _doRST()
 	_G._ESP_LOADED = nil
 	task.wait(0.3)
 	local ok = pcall(function()
-		loadstring(game:HttpGet("https://raw.githubusercontent.com/eidanexb-dotcom/-mis-scripts/refs/heads/main/Loder-CLAUDEX.lua?nocache=" .. tostring(tick()) .. tostring(math.random(100000, 999999)), true))()
+		loadstring(game:HttpGet("https://raw.githubusercontent.com/eidanexb-dotcom/-mis-scripts/refs/heads/main/esp.lua?nocache=" .. tostring(tick()) .. tostring(math.random(100000, 999999)), true))()
 	end)
 	if not ok then _rstBusy = false end
 end
@@ -1003,6 +1009,18 @@ for i = 1, #_tabNames do
 	btn.MouseButton1Click:Connect(function() _switchTab(ci) end)
 	_tabBtns[i] = btn
 end
+
+-- Creditos (abajo del tab bar)
+local _credits = Instance.new("TextLabel")
+_credits.Size = UDim2.new(1, 0, 0, 30)
+_credits.Position = UDim2.new(0, 0, 1, -30)
+_credits.BackgroundTransparency = 1
+_credits.Text = "Eidanex\n& Claude Mythos"
+_credits.TextColor3 = Color3.fromRGB(90, 90, 90)
+_credits.Font = Enum.Font.Gotham
+_credits.TextSize = 8
+_credits.Name = _rn()
+_credits.Parent = _dpanel
 
 -- Builder: tab 1=General 2=Combate 3=Move 4=Visual
 local function _dbtn(txt, order, tab)
