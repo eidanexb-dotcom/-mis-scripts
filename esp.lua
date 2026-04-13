@@ -444,7 +444,8 @@ local _ncParts = {}
 local _bright, _brightOG
 local _slide
 local _grav, _gravOG, _gravCon, _gravGyro
-local _ncb, _brb, _dsb, _grb
+local _ncb, _brb, _dsb, _grb, _ivb
+local _invis, _invisCon
 local _yupiSpd = 10
 local Lighting = game:GetService("Lighting")
 
@@ -474,34 +475,72 @@ _mb.Name = _rn()
 _mb.Parent = _sg
 Instance.new("UICorner", _mb).CornerRadius = UDim.new(0, 6)
 
-_mb.MouseButton1Click:Connect(function()
+local _mdf = Instance.new("Frame")
+_mdf.Size = UDim2.new(0, 80, 0, 158)
+_mdf.Position = UDim2.new(0, 55, 0.5, 25)
+_mdf.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+_mdf.BackgroundTransparency = 0.15
+_mdf.BorderSizePixel = 0
+_mdf.Visible = false
+_mdf.Name = _rn()
+_mdf.Parent = _sg
+Instance.new("UICorner", _mdf).CornerRadius = UDim.new(0, 6)
+
+local _mdl = Instance.new("UIListLayout")
+_mdl.Padding = UDim.new(0, 2)
+_mdl.Parent = _mdf
+
+local _mNames = {"INST", "SUAVE", "SOMBRERO", "COSTAL", "VALIENTE", "VISTA"}
+local _mColors = {C3_ON, Color3.fromRGB(255, 200, 0), Color3.fromRGB(255, 0, 200), Color3.fromRGB(255, 100, 0), C3_RED, Color3.fromRGB(100, 200, 255)}
+
+local function _setMode(mode)
 	local _prev = _tm
 	if _mv and _tc then _tc:Disconnect(); _mv = false end
-	if _prev >= 2 then
+	if _prev >= 2 and _prev <= 4 then
 		pcall(function()
 			local hum = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
 			if hum then hum.Sit = false end
 		end)
 	end
-	_tm = (_tm + 1) % 5
+	if _prev == 5 then
+		pcall(function()
+			local hum = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
+			if hum then game.Workspace.CurrentCamera.CameraSubject = hum end
+		end)
+	end
+	_tm = mode
 	_yuFrame.Visible = (_tm == 4)
 	_spFrame.Visible = (_tm == 1)
-	if _tm == 0 then
-		_mb.Text = "INST"
-		_mb.TextColor3 = C3_ON
-	elseif _tm == 1 then
-		_mb.Text = "SUAVE"
-		_mb.TextColor3 = Color3.fromRGB(255, 200, 0)
-	elseif _tm == 2 then
-		_mb.Text = "SOMBRERO"
-		_mb.TextColor3 = Color3.fromRGB(255, 0, 200)
-	elseif _tm == 3 then
-		_mb.Text = "COSTAL"
-		_mb.TextColor3 = Color3.fromRGB(255, 100, 0)
-	else
-		_mb.Text = "VALIENTE"
-		_mb.TextColor3 = C3_RED
+	_mb.Text = _mNames[mode + 1]
+	_mb.TextColor3 = _mColors[mode + 1]
+	_mdf.Visible = false
+end
+
+for i, name in ipairs(_mNames) do
+	local btn = Instance.new("TextButton")
+	btn.Size = UDim2.new(1, 0, 0, 24)
+	btn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+	btn.BackgroundTransparency = 0.3
+	btn.TextColor3 = _mColors[i]
+	btn.Font = Enum.Font.GothamBold
+	btn.TextSize = 9
+	btn.Text = name
+	btn.Name = _rn()
+	btn.Parent = _mdf
+	Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
+	btn.MouseButton1Click:Connect(function()
+		_setMode(i - 1)
+	end)
+end
+
+_mb.MouseButton1Click:Connect(function()
+	if _tm == 5 then
+		pcall(function()
+			local hum = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
+			if hum then game.Workspace.CurrentCamera.CameraSubject = hum end
+		end)
 	end
+	_mdf.Visible = not _mdf.Visible
 end)
 
 local _rst = Instance.new("TextButton")
@@ -526,6 +565,11 @@ local function _doRST()
 	pcall(function()
 		local hum = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
 		if hum then hum.Sit = false end
+	end)
+	-- resetear camara
+	pcall(function()
+		local hum = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
+		if hum then game.Workspace.CurrentCamera.CameraSubject = hum end
 	end)
 	-- limpiar noclip
 	_noclip = false
@@ -560,6 +604,11 @@ local function _doRST()
 			end
 		end)
 	end
+	-- restaurar invisibilidad
+	if _invis then
+		_invis = false
+		if _invisCon then pcall(function() _invisCon:Disconnect() end); _invisCon = nil end
+	end
 	-- restaurar walkspeed
 	if _slide then
 		_slide = false
@@ -582,6 +631,46 @@ local function _doRST()
 	if not ok then _rstBusy = false end
 end
 _rst.MouseButton1Click:Connect(_doRST)
+
+-- BOTON PARTIDO (INVIS + ?)
+local _spBtn = Instance.new("Frame")
+_spBtn.Size = UDim2.new(0, 40, 0, 25)
+_spBtn.Position = UDim2.new(0, 10, 0.5, 85)
+_spBtn.BackgroundTransparency = 1
+_spBtn.Name = _rn()
+_spBtn.Parent = _sg
+
+local _spL = Instance.new("TextButton")
+_spL.Size = UDim2.new(0.5, -1, 1, 0)
+_spL.Position = UDim2.new(0, 0, 0, 0)
+_spL.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+_spL.BackgroundTransparency = 0.3
+_spL.TextColor3 = C3_OFF
+_spL.Font = Enum.Font.GothamBold
+_spL.TextSize = 7
+_spL.Text = "INV"
+_spL.Name = _rn()
+_spL.Parent = _spBtn
+Instance.new("UICorner", _spL).CornerRadius = UDim.new(0, 4)
+
+local _spR = Instance.new("TextButton")
+_spR.Size = UDim2.new(0.5, -1, 1, 0)
+_spR.Position = UDim2.new(0.5, 1, 0, 0)
+_spR.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+_spR.BackgroundTransparency = 0.3
+_spR.TextColor3 = Color3.fromRGB(150, 150, 150)
+_spR.Font = Enum.Font.GothamBold
+_spR.TextSize = 7
+_spR.Text = "?"
+_spR.Name = _rn()
+_spR.Parent = _spBtn
+Instance.new("UICorner", _spR).CornerRadius = UDim.new(0, 4)
+
+_spL.MouseButton1Click:Connect(function()
+	_toggleInvis()
+	_spL.TextColor3 = _invis and C3_ON or C3_OFF
+	_spL.Text = _invis and "INV" or "INV"
+end)
 
 _lf = Instance.new("ScrollingFrame")
 _lf.Size = UDim2.new(0, 200, 0, 300)
@@ -739,6 +828,13 @@ local function _rl()
 							myRoot.Velocity = V3_ZERO
 						end)
 					end)
+				elseif _tm == 5 then
+					pcall(function()
+						local tHum = p.Character and p.Character:FindFirstChildOfClass("Humanoid")
+						if tHum then
+							game.Workspace.CurrentCamera.CameraSubject = tHum
+						end
+					end)
 				else
 					pcall(function()
 						local tHRP = p.Character and p.Character:FindFirstChild("HumanoidRootPart")
@@ -785,7 +881,8 @@ _tg.MouseButton1Click:Connect(function()
 	_tb.Visible = _open
 	_mb.Visible = _open
 	_rst.Visible = _open
-	if not _open then _lf.Visible = false end
+	_spBtn.Visible = _open
+	if not _open then _lf.Visible = false; _mdf.Visible = false end
 	_tg.Text = ">>>"
 	_tg.BackgroundColor3 = _open and C3_CLAUDEX or Color3.fromRGB(50, 50, 50)
 end)
@@ -899,10 +996,11 @@ _ncb = _dbtn("NOCLIP: OFF", 1)
 _brb = _dbtn("LUZ: OFF", 2)
 _dsb = _dbtn("DESLIZAMIENTO: OFF", 3)
 _grb = _dbtn("GRAVEDAD 0: OFF", 5)
+_ivb = _dbtn("INVIS: OFF", 8)
 
 -- SLIDER YUPI
 local _yupiMin = 1
-local _yupiMax = 100
+local _yupiMax = 1000
 
 _yuFrame = Instance.new("Frame")
 _yuFrame.Size = UDim2.new(1, 0, 0, 30)
@@ -1288,6 +1386,55 @@ local function _toggleGrav()
 end
 _grb.MouseButton1Click:Connect(_toggleGrav)
 
+-- INVISIBILIDAD (FE CFrame Desync)
+local _invisCF = nil
+
+local function _toggleInvis()
+	_invis = not _invis
+	if _invis then
+		local hrp = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
+		if not hrp then _invis = false; return end
+		_ivb.Text = "INVIS: ON"
+		_ivb.TextColor3 = C3_ON
+		-- guardar posicion real
+		_invisCF = hrp.CFrame
+		-- mandar al servidor lejoooos
+		hrp.CFrame = CFrame.new(9e8, 9e8, 9e8)
+		hrp.Velocity = V3_ZERO
+		-- esperar que el servidor registre
+		task.wait(0.5)
+		-- volver localmente a donde estabas
+		hrp.CFrame = _invisCF
+		-- mantener posicion local contra correcciones del servidor
+		_invisCon = RS.Stepped:Connect(function()
+			if not _invis then return end
+			local hrp2 = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
+			if not hrp2 then return end
+			-- si el servidor intenta mandarnos de vuelta al 9e8, cancelar
+			if hrp2.Position.Magnitude > 1e7 then
+				hrp2.CFrame = _invisCF
+			end
+			-- actualizar posicion guardada pa cuando desactivemos
+			if hrp2.Position.Magnitude < 1e7 then
+				_invisCF = hrp2.CFrame
+			end
+		end)
+	else
+		_ivb.Text = "INVIS: OFF"
+		_ivb.TextColor3 = C3_OFF
+		if _invisCon then _invisCon:Disconnect(); _invisCon = nil end
+		-- forzar al servidor a ver nuestra posicion real
+		pcall(function()
+			local hrp = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
+			if hrp and _invisCF then
+				hrp.CFrame = _invisCF
+			end
+		end)
+		_invisCF = nil
+	end
+end
+_ivb.MouseButton1Click:Connect(_toggleInvis)
+
 local _tinfo = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 
 local function _toggleDropdown()
@@ -1312,6 +1459,7 @@ UIS.InputBegan:Connect(function(input, gpe)
 	elseif kc == Enum.KeyCode.F4 then _toggleSlide()
 	elseif kc == Enum.KeyCode.F5 then _toggleGrav()
 	elseif kc == Enum.KeyCode.F6 then _toggleDropdown()
+	elseif kc == Enum.KeyCode.F7 then _toggleInvis()
 	elseif kc == Enum.KeyCode.F8 then _doRST()
 	end
 end)
