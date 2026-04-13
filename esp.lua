@@ -449,6 +449,7 @@ local _grav, _gravOG, _gravCon, _gravGyro
 local _ncb, _brb, _dsb, _grb
 local _invis
 local _spL
+local _toggleInvis
 local _yupiSpd = 10
 local Lighting = game:GetService("Lighting")
 
@@ -1445,7 +1446,7 @@ end
 _grb.MouseButton1Click:Connect(_toggleGrav)
 
 -- INVISIBILIDAD (motor externo FE)
-local function _toggleInvis()
+_toggleInvis = function()
 	_invis = not _invis
 	if _spL then _spL.TextColor3 = _invis and C3_ON or C3_OFF end
 	pcall(function()
