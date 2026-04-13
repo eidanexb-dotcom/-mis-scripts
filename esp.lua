@@ -444,8 +444,9 @@ local _ncParts = {}
 local _bright, _brightOG
 local _slide
 local _grav, _gravOG, _gravCon, _gravGyro
-local _ncb, _brb, _dsb, _grb, _ivb
+local _ncb, _brb, _dsb, _grb
 local _invis, _invisCon
+local _spL
 local _yupiSpd = 10
 local Lighting = game:GetService("Lighting")
 
@@ -640,7 +641,7 @@ _spBtn.BackgroundTransparency = 1
 _spBtn.Name = _rn()
 _spBtn.Parent = _sg
 
-local _spL = Instance.new("TextButton")
+_spL = Instance.new("TextButton")
 _spL.Size = UDim2.new(0.5, -1, 1, 0)
 _spL.Position = UDim2.new(0, 0, 0, 0)
 _spL.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
@@ -648,7 +649,7 @@ _spL.BackgroundTransparency = 0.3
 _spL.TextColor3 = C3_OFF
 _spL.Font = Enum.Font.GothamBold
 _spL.TextSize = 7
-_spL.Text = "INV"
+_spL.Text = "OFF"
 _spL.Name = _rn()
 _spL.Parent = _spBtn
 Instance.new("UICorner", _spL).CornerRadius = UDim.new(0, 4)
@@ -658,18 +659,79 @@ _spR.Size = UDim2.new(0.5, -1, 1, 0)
 _spR.Position = UDim2.new(0.5, 1, 0, 0)
 _spR.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 _spR.BackgroundTransparency = 0.3
-_spR.TextColor3 = Color3.fromRGB(150, 150, 150)
+_spR.TextColor3 = C3_OFF
 _spR.Font = Enum.Font.GothamBold
-_spR.TextSize = 7
-_spR.Text = "?"
+_spR.TextSize = 6
+_spR.Text = "AJ"
 _spR.Name = _rn()
 _spR.Parent = _spBtn
 Instance.new("UICorner", _spR).CornerRadius = UDim.new(0, 4)
 
+local _ajust = false
+local _ajDrag = false
+local _ajOffset = nil
+local _floatBtn = nil
+local _floatSpawned = false
+
+-- INV: espaunea/despaunea el boton flotante "INVISIBLE"
 _spL.MouseButton1Click:Connect(function()
-	_toggleInvis()
-	_spL.TextColor3 = _invis and C3_ON or C3_OFF
-	_spL.Text = _invis and "INV" or "INV"
+	_floatSpawned = not _floatSpawned
+	_spL.TextColor3 = _floatSpawned and C3_ON or C3_OFF
+	_spL.Text = _floatSpawned and "ON" or "OFF"
+	if _floatSpawned then
+		_floatBtn = Instance.new("TextButton")
+		_floatBtn.Size = UDim2.new(0, 90, 0, 35)
+		_floatBtn.Position = UDim2.new(0.5, -45, 0.85, 0)
+		_floatBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+		_floatBtn.BackgroundTransparency = 0.2
+		_floatBtn.TextColor3 = C3_OFF
+		_floatBtn.Font = Enum.Font.GothamBold
+		_floatBtn.TextSize = 11
+		_floatBtn.Text = "INVISIBLE"
+		_floatBtn.Name = _rn()
+		_floatBtn.Parent = _sg
+		Instance.new("UICorner", _floatBtn).CornerRadius = UDim.new(0, 8)
+
+		_floatBtn.MouseButton1Click:Connect(function()
+			if _ajust then return end
+			_toggleInvis()
+			_floatBtn.TextColor3 = _invis and C3_ON or C3_OFF
+		end)
+
+		_floatBtn.InputBegan:Connect(function(input)
+			if not _ajust then return end
+			if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+				_ajDrag = true
+				_ajOffset = Vector2.new(input.Position.X, input.Position.Y) - Vector2.new(_floatBtn.AbsolutePosition.X, _floatBtn.AbsolutePosition.Y)
+			end
+		end)
+	else
+		-- si invis esta activo, desactivar primero
+		if _invis then _toggleInvis() end
+		if _floatBtn then pcall(function() _floatBtn:Destroy() end); _floatBtn = nil end
+	end
+end)
+
+-- AJ: toggle drag del boton flotante
+_spR.MouseButton1Click:Connect(function()
+	_ajust = not _ajust
+	_spR.TextColor3 = _ajust and C3_ON or C3_OFF
+end)
+
+UIS.InputChanged:Connect(function(input)
+	if _gen ~= _mainGen then return end
+	if not _ajDrag or not _floatBtn then return end
+	if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+		local pos = Vector2.new(input.Position.X, input.Position.Y) - _ajOffset
+		_floatBtn.Position = UDim2.new(0, pos.X, 0, pos.Y)
+	end
+end)
+
+UIS.InputEnded:Connect(function(input)
+	if _gen ~= _mainGen then return end
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		_ajDrag = false
+	end
 end)
 
 _lf = Instance.new("ScrollingFrame")
@@ -996,7 +1058,6 @@ _ncb = _dbtn("NOCLIP: OFF", 1)
 _brb = _dbtn("LUZ: OFF", 2)
 _dsb = _dbtn("DESLIZAMIENTO: OFF", 3)
 _grb = _dbtn("GRAVEDAD 0: OFF", 5)
-_ivb = _dbtn("INVIS: OFF", 8)
 
 -- SLIDER YUPI
 local _yupiMin = 1
@@ -1394,8 +1455,7 @@ local function _toggleInvis()
 	if _invis then
 		local hrp = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
 		if not hrp then _invis = false; return end
-		_ivb.Text = "INVIS: ON"
-		_ivb.TextColor3 = C3_ON
+		if _spL then _spL.TextColor3 = C3_ON end
 		-- guardar posicion real
 		_invisCF = hrp.CFrame
 		-- mandar al servidor lejoooos
@@ -1405,10 +1465,18 @@ local function _toggleInvis()
 		task.wait(0.5)
 		-- volver localmente a donde estabas
 		hrp.CFrame = _invisCF
-		-- mantener posicion local contra correcciones del servidor
+		-- verte fantasma pa saber que estas invisible
+		pcall(function()
+			for _, p in ipairs(LP.Character:GetDescendants()) do
+				if p:IsA("BasePart") then p.LocalTransparencyModifier = 0.6 end
+			end
+		end)
+		-- mantener posicion local + efecto fantasma
 		_invisCon = RS.Stepped:Connect(function()
 			if not _invis then return end
-			local hrp2 = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
+			local ch = LP.Character
+			if not ch then return end
+			local hrp2 = ch:FindFirstChild("HumanoidRootPart")
 			if not hrp2 then return end
 			-- si el servidor intenta mandarnos de vuelta al 9e8, cancelar
 			if hrp2.Position.Magnitude > 1e7 then
@@ -1418,11 +1486,20 @@ local function _toggleInvis()
 			if hrp2.Position.Magnitude < 1e7 then
 				_invisCF = hrp2.CFrame
 			end
+			-- mantener efecto fantasma
+			for _, p in ipairs(ch:GetDescendants()) do
+				if p:IsA("BasePart") then p.LocalTransparencyModifier = 0.6 end
+			end
 		end)
 	else
-		_ivb.Text = "INVIS: OFF"
-		_ivb.TextColor3 = C3_OFF
+		if _spL then _spL.TextColor3 = C3_OFF end
 		if _invisCon then _invisCon:Disconnect(); _invisCon = nil end
+		-- quitar efecto fantasma
+		pcall(function()
+			for _, p in ipairs(LP.Character:GetDescendants()) do
+				if p:IsA("BasePart") then p.LocalTransparencyModifier = 0 end
+			end
+		end)
 		-- forzar al servidor a ver nuestra posicion real
 		pcall(function()
 			local hrp = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
@@ -1433,7 +1510,6 @@ local function _toggleInvis()
 		_invisCF = nil
 	end
 end
-_ivb.MouseButton1Click:Connect(_toggleInvis)
 
 local _tinfo = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 
@@ -1459,7 +1535,9 @@ UIS.InputBegan:Connect(function(input, gpe)
 	elseif kc == Enum.KeyCode.F4 then _toggleSlide()
 	elseif kc == Enum.KeyCode.F5 then _toggleGrav()
 	elseif kc == Enum.KeyCode.F6 then _toggleDropdown()
-	elseif kc == Enum.KeyCode.F7 then _toggleInvis()
+	elseif kc == Enum.KeyCode.F7 then
+		_toggleInvis()
+		if _floatBtn then _floatBtn.TextColor3 = _invis and C3_ON or C3_OFF end
 	elseif kc == Enum.KeyCode.F8 then _doRST()
 	end
 end)
