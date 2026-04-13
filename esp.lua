@@ -450,6 +450,16 @@ local _ncb, _brb, _dsb, _grb
 local _invis
 local _toggleInvis
 local _ivL
+local _fling = false
+local _flingCon
+local _flyOn = false
+local _flyBV, _flyBG, _flyCon
+local _infJump = false
+local _ijCon
+local _antiRag = false
+local _antiRagCons = {}
+local _antiRagCharCon
+local _clearAntiRag
 local _yupiSpd = 10
 local Lighting = game:GetService("Lighting")
 
@@ -607,6 +617,33 @@ local function _doRST()
 				end
 			end
 		end)
+	end
+	-- restaurar fly
+	if _flyOn then
+		_flyOn = false
+		if _flyCon then pcall(function() _flyCon:Disconnect() end); _flyCon = nil end
+		if _flyBV then pcall(function() _flyBV:Destroy() end); _flyBV = nil end
+		if _flyBG then pcall(function() _flyBG:Destroy() end); _flyBG = nil end
+	end
+	-- restaurar inf jump
+	if _infJump then
+		_infJump = false
+		if _ijCon then pcall(function() _ijCon:Disconnect() end); _ijCon = nil end
+	end
+	-- restaurar fling
+	if _fling then
+		_fling = false
+		if _flingCon then pcall(function() _flingCon:Disconnect() end); _flingCon = nil end
+		pcall(function()
+			local hrp = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
+			if hrp then hrp.Velocity = V3_ZERO; hrp.RotVelocity = V3_ZERO end
+		end)
+	end
+	-- restaurar anti-rag
+	if _antiRag then
+		_antiRag = false
+		if _antiRagCharCon then pcall(function() _antiRagCharCon:Disconnect() end); _antiRagCharCon = nil end
+		_clearAntiRag()
 	end
 	-- restaurar invisibilidad
 	if _invis then
@@ -963,6 +1000,149 @@ _grb = _dbtn("GRAVEDAD 0: OFF", 5)
 _ivL = _dbtn("INVI: OFF", 9)
 _ivL.MouseButton1Click:Connect(function()
 	_toggleInvis()
+end)
+
+-- ANTI-RAG (godmode + anti-ragdoll + anti-sit forzado)
+local _arb = _dbtn("ANTI-RAG: OFF", 10)
+
+_clearAntiRag = function()
+	for _, c in ipairs(_antiRagCons) do pcall(function() c:Disconnect() end) end
+	_antiRagCons = {}
+end
+
+local function _applyAntiRag(hum)
+	if not hum then return end
+	pcall(function() hum.BreakJointsOnDeath = false end)
+	pcall(function() hum.AutoRotate = true end)
+	pcall(function() hum.PlatformStand = false end)
+
+	tinsert(_antiRagCons, hum.HealthChanged:Connect(function(hp)
+		if _antiRag and hp <= 0 then hum.Health = 1 end
+	end))
+
+	tinsert(_antiRagCons, hum:GetPropertyChangedSignal("AutoRotate"):Connect(function()
+		if _antiRag and not hum.AutoRotate then hum.AutoRotate = true end
+	end))
+
+	tinsert(_antiRagCons, hum:GetPropertyChangedSignal("PlatformStand"):Connect(function()
+		if _antiRag and hum.PlatformStand then hum.PlatformStand = false end
+	end))
+
+	tinsert(_antiRagCons, RS.RenderStepped:Connect(function()
+		if _antiRag and hum.Sit and not hum.SeatPart then hum.Sit = false end
+	end))
+end
+
+local function _toggleAntiRag()
+	_antiRag = not _antiRag
+	_arb.Text = _antiRag and "ANTI-RAG: ON" or "ANTI-RAG: OFF"
+	_arb.TextColor3 = _antiRag and C3_ON or C3_OFF
+	if _antiRag then
+		local ch = LP.Character
+		if ch then _applyAntiRag(ch:FindFirstChildOfClass("Humanoid")) end
+		_antiRagCharCon = LP.CharacterAdded:Connect(function(c)
+			if not _antiRag then return end
+			local h = c:WaitForChild("Humanoid", 5)
+			if h then _applyAntiRag(h) end
+		end)
+	else
+		if _antiRagCharCon then _antiRagCharCon:Disconnect(); _antiRagCharCon = nil end
+		_clearAntiRag()
+	end
+end
+
+_arb.MouseButton1Click:Connect(_toggleAntiRag)
+
+-- FLING (licuadora humana)
+local _flb = _dbtn("FLING: OFF", 11)
+
+_flb.MouseButton1Click:Connect(function()
+	_fling = not _fling
+	_flb.Text = _fling and "FLING: ON" or "FLING: OFF"
+	_flb.TextColor3 = _fling and C3_ON or C3_OFF
+	if _fling then
+		_flingCon = RS.Heartbeat:Connect(function()
+			if not _fling then return end
+			local ch = LP.Character
+			if not ch then return end
+			local hrp = ch:FindFirstChild("HumanoidRootPart")
+			if not hrp then return end
+			hrp.Velocity = Vector3.new(9e9, 9e9, 9e9)
+			hrp.RotVelocity = Vector3.new(0, 9e9, 0)
+			for _, v in ipairs(ch:GetDescendants()) do
+				if v:IsA("BasePart") then v.CanCollide = false end
+			end
+		end)
+	else
+		if _flingCon then _flingCon:Disconnect(); _flingCon = nil end
+		pcall(function()
+			local hrp = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
+			if hrp then
+				hrp.Velocity = V3_ZERO
+				hrp.RotVelocity = V3_ZERO
+			end
+		end)
+	end
+end)
+
+-- FLY (BodyVelocity + BodyGyro, WASD Space Ctrl)
+local _fyb = _dbtn("FLY: OFF", 12)
+
+_fyb.MouseButton1Click:Connect(function()
+	_flyOn = not _flyOn
+	_fyb.Text = _flyOn and "FLY: ON" or "FLY: OFF"
+	_fyb.TextColor3 = _flyOn and C3_ON or C3_OFF
+	if _flyOn then
+		local hrp = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
+		if not hrp then _flyOn = false; _fyb.Text = "FLY: OFF"; _fyb.TextColor3 = C3_OFF; return end
+		_flyBV = Instance.new("BodyVelocity")
+		_flyBV.MaxForce = Vector3.new(1e6, 1e6, 1e6)
+		_flyBV.Velocity = V3_ZERO
+		_flyBV.Parent = hrp
+		_flyBG = Instance.new("BodyGyro")
+		_flyBG.MaxTorque = Vector3.new(1e6, 1e6, 1e6)
+		_flyBG.P = 12500
+		_flyBG.Parent = hrp
+		_flyCon = RS.Heartbeat:Connect(function()
+			if not _flyOn then return end
+			local r = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
+			if not r then return end
+			local mv = V3_ZERO
+			if UIS:IsKeyDown(Enum.KeyCode.W) then mv = mv + r.CFrame.LookVector end
+			if UIS:IsKeyDown(Enum.KeyCode.S) then mv = mv - r.CFrame.LookVector end
+			if UIS:IsKeyDown(Enum.KeyCode.A) then mv = mv - r.CFrame.RightVector end
+			if UIS:IsKeyDown(Enum.KeyCode.D) then mv = mv + r.CFrame.RightVector end
+			if UIS:IsKeyDown(Enum.KeyCode.Space) then mv = mv + Vector3.new(0, 1, 0) end
+			if UIS:IsKeyDown(Enum.KeyCode.LeftControl) then mv = mv - Vector3.new(0, 1, 0) end
+			if mv.Magnitude > 0 then mv = mv.Unit * 80 end
+			_flyBV.Velocity = mv
+			_flyBG.CFrame = r.CFrame
+		end)
+	else
+		if _flyCon then _flyCon:Disconnect(); _flyCon = nil end
+		if _flyBV then pcall(function() _flyBV:Destroy() end); _flyBV = nil end
+		if _flyBG then pcall(function() _flyBG:Destroy() end); _flyBG = nil end
+	end
+end)
+
+-- INF JUMP (salto infinito)
+local _ijb = _dbtn("INF JUMP: OFF", 13)
+
+_ijb.MouseButton1Click:Connect(function()
+	_infJump = not _infJump
+	_ijb.Text = _infJump and "INF JUMP: ON" or "INF JUMP: OFF"
+	_ijb.TextColor3 = _infJump and C3_ON or C3_OFF
+	if _infJump then
+		_ijCon = UIS.JumpRequest:Connect(function()
+			if not _infJump then return end
+			local hum = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
+			if hum then
+				hum:ChangeState(Enum.HumanoidStateType.Jumping)
+			end
+		end)
+	else
+		if _ijCon then _ijCon:Disconnect(); _ijCon = nil end
+	end
 end)
 
 -- SLIDER YUPI
