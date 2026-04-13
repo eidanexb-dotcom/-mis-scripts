@@ -99,6 +99,8 @@ end
 
 local Players = game:GetService("Players")
 local RS = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+local UIS = game:GetService("UserInputService")
 local LP = Players.LocalPlayer
 
 -- ============ CACHE ============
@@ -633,106 +635,6 @@ local function _doRST()
 end
 _rst.MouseButton1Click:Connect(_doRST)
 
--- BOTON PARTIDO (INVIS + ?)
-local _spBtn = Instance.new("Frame")
-_spBtn.Size = UDim2.new(0, 40, 0, 25)
-_spBtn.Position = UDim2.new(0, 10, 0.5, 85)
-_spBtn.BackgroundTransparency = 1
-_spBtn.Name = _rn()
-_spBtn.Parent = _sg
-
-_spL = Instance.new("TextButton")
-_spL.Size = UDim2.new(0.5, -1, 1, 0)
-_spL.Position = UDim2.new(0, 0, 0, 0)
-_spL.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-_spL.BackgroundTransparency = 0.3
-_spL.TextColor3 = C3_OFF
-_spL.Font = Enum.Font.GothamBold
-_spL.TextSize = 7
-_spL.Text = "OFF"
-_spL.Name = _rn()
-_spL.Parent = _spBtn
-Instance.new("UICorner", _spL).CornerRadius = UDim.new(0, 4)
-
-local _spR = Instance.new("TextButton")
-_spR.Size = UDim2.new(0.5, -1, 1, 0)
-_spR.Position = UDim2.new(0.5, 1, 0, 0)
-_spR.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-_spR.BackgroundTransparency = 0.3
-_spR.TextColor3 = C3_OFF
-_spR.Font = Enum.Font.GothamBold
-_spR.TextSize = 6
-_spR.Text = "AJ"
-_spR.Name = _rn()
-_spR.Parent = _spBtn
-Instance.new("UICorner", _spR).CornerRadius = UDim.new(0, 4)
-
-local _ajust = false
-local _ajDrag = false
-local _ajOffset = nil
-local _floatBtn = nil
-local _floatSpawned = false
-
--- INV: espaunea/despaunea el boton flotante "INVISIBLE"
-_spL.MouseButton1Click:Connect(function()
-	_floatSpawned = not _floatSpawned
-	_spL.TextColor3 = _floatSpawned and C3_ON or C3_OFF
-	_spL.Text = _floatSpawned and "ON" or "OFF"
-	if _floatSpawned then
-		_floatBtn = Instance.new("TextButton")
-		_floatBtn.Size = UDim2.new(0, 90, 0, 35)
-		_floatBtn.Position = UDim2.new(0.5, -45, 0.85, 0)
-		_floatBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-		_floatBtn.BackgroundTransparency = 0.2
-		_floatBtn.TextColor3 = C3_OFF
-		_floatBtn.Font = Enum.Font.GothamBold
-		_floatBtn.TextSize = 11
-		_floatBtn.Text = "INVISIBLE"
-		_floatBtn.Name = _rn()
-		_floatBtn.Parent = _sg
-		Instance.new("UICorner", _floatBtn).CornerRadius = UDim.new(0, 8)
-
-		_floatBtn.MouseButton1Click:Connect(function()
-			if _ajust then return end
-			_toggleInvis()
-			_floatBtn.TextColor3 = _invis and C3_ON or C3_OFF
-		end)
-
-		_floatBtn.InputBegan:Connect(function(input)
-			if not _ajust then return end
-			if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-				_ajDrag = true
-				_ajOffset = Vector2.new(input.Position.X, input.Position.Y) - Vector2.new(_floatBtn.AbsolutePosition.X, _floatBtn.AbsolutePosition.Y)
-			end
-		end)
-	else
-		-- si invis esta activo, desactivar primero
-		if _invis then _toggleInvis() end
-		if _floatBtn then pcall(function() _floatBtn:Destroy() end); _floatBtn = nil end
-	end
-end)
-
--- AJ: toggle drag del boton flotante
-_spR.MouseButton1Click:Connect(function()
-	_ajust = not _ajust
-	_spR.TextColor3 = _ajust and C3_ON or C3_OFF
-end)
-
-UIS.InputChanged:Connect(function(input)
-	if _gen ~= _mainGen then return end
-	if not _ajDrag or not _floatBtn then return end
-	if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-		local pos = Vector2.new(input.Position.X, input.Position.Y) - _ajOffset
-		_floatBtn.Position = UDim2.new(0, pos.X, 0, pos.Y)
-	end
-end)
-
-UIS.InputEnded:Connect(function(input)
-	if _gen ~= _mainGen then return end
-	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-		_ajDrag = false
-	end
-end)
 
 _lf = Instance.new("ScrollingFrame")
 _lf.Size = UDim2.new(0, 200, 0, 300)
@@ -943,15 +845,12 @@ _tg.MouseButton1Click:Connect(function()
 	_tb.Visible = _open
 	_mb.Visible = _open
 	_rst.Visible = _open
-	_spBtn.Visible = _open
 	if not _open then _lf.Visible = false; _mdf.Visible = false end
 	_tg.Text = ">>>"
 	_tg.BackgroundColor3 = _open and C3_CLAUDEX or Color3.fromRGB(50, 50, 50)
 end)
 
 -- ============ DROPDOWN TOP ============
-local TweenService = game:GetService("TweenService")
-local UIS = game:GetService("UserInputService")
 
 _dsg = _gui()
 _AT._tsg = _dsg
@@ -1058,6 +957,104 @@ _ncb = _dbtn("NOCLIP: OFF", 1)
 _brb = _dbtn("LUZ: OFF", 2)
 _dsb = _dbtn("DESLIZAMIENTO: OFF", 3)
 _grb = _dbtn("GRAVEDAD 0: OFF", 5)
+
+-- BOTON PARTIDO INVIS (dentro del dropdown)
+local _spFrame2 = Instance.new("Frame")
+_spFrame2.Size = UDim2.new(1, 0, 0, 30)
+_spFrame2.BackgroundTransparency = 1
+_spFrame2.LayoutOrder = 9
+_spFrame2.Name = _rn()
+_spFrame2.Parent = _dpanel
+
+_spL = Instance.new("TextButton")
+_spL.Size = UDim2.new(0.5, -2, 1, 0)
+_spL.Position = UDim2.new(0, 0, 0, 0)
+_spL.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+_spL.BackgroundTransparency = 0.3
+_spL.TextColor3 = C3_OFF
+_spL.Font = Enum.Font.GothamBold
+_spL.TextSize = 10
+_spL.Text = "OFF"
+_spL.Name = _rn()
+_spL.Parent = _spFrame2
+Instance.new("UICorner", _spL).CornerRadius = UDim.new(0, 6)
+
+local _spR = Instance.new("TextButton")
+_spR.Size = UDim2.new(0.5, -2, 1, 0)
+_spR.Position = UDim2.new(0.5, 2, 0, 0)
+_spR.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+_spR.BackgroundTransparency = 0.3
+_spR.TextColor3 = C3_OFF
+_spR.Font = Enum.Font.GothamBold
+_spR.TextSize = 10
+_spR.Text = "AJUST"
+_spR.Name = _rn()
+_spR.Parent = _spFrame2
+Instance.new("UICorner", _spR).CornerRadius = UDim.new(0, 6)
+
+local _ajust = false
+local _ajDrag = false
+local _ajOffset = nil
+local _floatBtn = nil
+local _floatSpawned = false
+
+_spL.MouseButton1Click:Connect(function()
+	_floatSpawned = not _floatSpawned
+	_spL.TextColor3 = _floatSpawned and C3_ON or C3_OFF
+	_spL.Text = _floatSpawned and "ON" or "OFF"
+	if _floatSpawned then
+		_floatBtn = Instance.new("TextButton")
+		_floatBtn.Size = UDim2.new(0, 90, 0, 35)
+		_floatBtn.Position = UDim2.new(0.5, -45, 0.85, 0)
+		_floatBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+		_floatBtn.BackgroundTransparency = 0.2
+		_floatBtn.TextColor3 = C3_OFF
+		_floatBtn.Font = Enum.Font.GothamBold
+		_floatBtn.TextSize = 11
+		_floatBtn.Text = "INVISIBLE"
+		_floatBtn.Name = _rn()
+		_floatBtn.Parent = _sg
+		Instance.new("UICorner", _floatBtn).CornerRadius = UDim.new(0, 8)
+
+		_floatBtn.MouseButton1Click:Connect(function()
+			if _ajust then return end
+			_toggleInvis()
+			_floatBtn.TextColor3 = _invis and C3_ON or C3_OFF
+		end)
+
+		_floatBtn.InputBegan:Connect(function(input)
+			if not _ajust then return end
+			if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+				_ajDrag = true
+				_ajOffset = Vector2.new(input.Position.X, input.Position.Y) - Vector2.new(_floatBtn.AbsolutePosition.X, _floatBtn.AbsolutePosition.Y)
+			end
+		end)
+	else
+		if _invis then _toggleInvis() end
+		if _floatBtn then pcall(function() _floatBtn:Destroy() end); _floatBtn = nil end
+	end
+end)
+
+_spR.MouseButton1Click:Connect(function()
+	_ajust = not _ajust
+	_spR.TextColor3 = _ajust and C3_ON or C3_OFF
+end)
+
+UIS.InputChanged:Connect(function(input)
+	if _gen ~= _mainGen then return end
+	if not _ajDrag or not _floatBtn then return end
+	if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+		local pos = Vector2.new(input.Position.X, input.Position.Y) - _ajOffset
+		_floatBtn.Position = UDim2.new(0, pos.X, 0, pos.Y)
+	end
+end)
+
+UIS.InputEnded:Connect(function(input)
+	if _gen ~= _mainGen then return end
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		_ajDrag = false
+	end
+end)
 
 -- SLIDER YUPI
 local _yupiMin = 1
