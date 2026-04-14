@@ -357,7 +357,7 @@ local _noclip, _nccon
 local _ncParts = {}
 local _bright, _brightOG
 local _slide
-local _grav, _gravOG, _gravCon, _gravGyro
+local _grav, _gravOG, _gravCon, _gravGyro, _gravBV, _gravMoveCon
 local _ncb, _brb, _dsb, _grb
 local _invis
 local _toggleInvis
@@ -523,11 +523,22 @@ local function _doRST()
 	if _grav then
 		_grav = false
 		if _gravCon then pcall(function() _gravCon:Disconnect() end); _gravCon = nil end
+		if _gravMoveCon then pcall(function() _gravMoveCon:Disconnect() end); _gravMoveCon = nil end
+		if _gravBV then pcall(function() _gravBV:Destroy() end); _gravBV = nil end
 		if _gravGyro then pcall(function() _gravGyro:Destroy() end); _gravGyro = nil end
 		pcall(function() game.Workspace.Gravity = _gravOG or 196.2 end)
 		pcall(function()
 			local hum = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
-			if hum then hum.PlatformStand = false end
+			if hum then
+				hum.PlatformStand = false
+				hum:SetStateEnabled(Enum.HumanoidStateType.GettingUp, true)
+				hum:SetStateEnabled(Enum.HumanoidStateType.Running, true)
+				hum:SetStateEnabled(Enum.HumanoidStateType.RunningNoPhysics, true)
+				hum:SetStateEnabled(Enum.HumanoidStateType.Jumping, true)
+				hum:SetStateEnabled(Enum.HumanoidStateType.Landed, true)
+				local anim = LP.Character:FindFirstChild("Animate")
+				if anim then anim.Disabled = false end
+			end
 		end)
 	end
 	-- restaurar luz
@@ -1672,10 +1683,40 @@ local function _toggleGrav()
 		_grb.TextColor3 = C3_ON
 		_gravOG = game.Workspace.Gravity
 		game.Workspace.Gravity = 2
-		-- ragdoll on (sin BodyGyro para que se caiga)
+		-- ragdoll on
 		pcall(function()
 			local hum = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
-			if hum then hum.PlatformStand = true end
+			if hum then
+				hum.PlatformStand = true
+				hum:SetStateEnabled(Enum.HumanoidStateType.GettingUp, false)
+				hum:SetStateEnabled(Enum.HumanoidStateType.Running, false)
+				hum:SetStateEnabled(Enum.HumanoidStateType.RunningNoPhysics, false)
+				hum:SetStateEnabled(Enum.HumanoidStateType.Jumping, false)
+				hum:SetStateEnabled(Enum.HumanoidStateType.Landed, false)
+				hum:ChangeState(Enum.HumanoidStateType.Physics)
+				local anim = LP.Character:FindFirstChild("Animate")
+				if anim then anim.Disabled = true end
+				for _, t in ipairs(hum:GetPlayingAnimationTracks()) do t:AdjustSpeed(0) end
+			end
+		end)
+		-- movimiento (MoveDirection = PC + movil)
+		local hrp = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
+		if hrp then
+			_gravBV = Instance.new("BodyVelocity")
+			_gravBV.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+			_gravBV.Velocity = V3_ZERO
+			_gravBV.Parent = hrp
+		end
+		_gravMoveCon = RS.Heartbeat:Connect(function()
+			if not _grav or not _gravBV then return end
+			local hum = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
+			if not hum then return end
+			local md = hum.MoveDirection
+			if md.Magnitude > 0 then
+				_gravBV.Velocity = md.Unit * 50
+			else
+				_gravBV.Velocity = V3_ZERO
+			end
 		end)
 		_gravCon = RS.Heartbeat:Connect(function()
 			if not _grav then return end
@@ -1688,12 +1729,24 @@ local function _toggleGrav()
 		_grb.Text = "GRAVEDAD 0: OFF"
 		_grb.TextColor3 = C3_OFF
 		if _gravCon then _gravCon:Disconnect(); _gravCon = nil end
+		if _gravMoveCon then _gravMoveCon:Disconnect(); _gravMoveCon = nil end
+		if _gravBV then pcall(function() _gravBV:Destroy() end); _gravBV = nil end
 		if _gravGyro then pcall(function() _gravGyro:Destroy() end); _gravGyro = nil end
 		game.Workspace.Gravity = _gravOG or 196.2
 		-- ragdoll off
 		pcall(function()
 			local hum = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
-			if hum then hum.PlatformStand = false end
+			if hum then
+				hum.PlatformStand = false
+				hum:SetStateEnabled(Enum.HumanoidStateType.GettingUp, true)
+				hum:SetStateEnabled(Enum.HumanoidStateType.Running, true)
+				hum:SetStateEnabled(Enum.HumanoidStateType.RunningNoPhysics, true)
+				hum:SetStateEnabled(Enum.HumanoidStateType.Jumping, true)
+				hum:SetStateEnabled(Enum.HumanoidStateType.Landed, true)
+				hum:ChangeState(Enum.HumanoidStateType.GettingUp)
+				local anim = LP.Character:FindFirstChild("Animate")
+				if anim then anim.Disabled = false end
+			end
 		end)
 	end
 end
