@@ -519,6 +519,11 @@ local function _doRST()
 		if p and p.Parent then pcall(function() p.CanCollide = true end) end
 	end
 	_ncParts = {}
+	-- restaurar jerk
+	if _jerkOn then
+		_jerkOn = false
+		pcall(function() if _jerkTrack then _jerkTrack:Stop(); _jerkTrack:Destroy(); _jerkTrack = nil end end)
+	end
 	-- restaurar gravedad
 	if _grav then
 		_grav = false
@@ -1049,6 +1054,31 @@ _ncb = _dbtn("NOCLIP: OFF", 1, 1)
 _brb = _dbtn("LUZ: OFF", 2, 1)
 _dsb = _dbtn("DESLIZAMIENTO: OFF", 3, 1)
 _grb = _dbtn("GRAVEDAD 0: OFF", 5, 1)
+
+-- JERK
+local _jerkOn = false
+local _jerkTrack
+local _jerkBtn = _dbtn("JERK: OFF", 4, 1)
+_jerkBtn.MouseButton1Click:Connect(function()
+	_jerkOn = not _jerkOn
+	_jerkBtn.Text = _jerkOn and "JERK: ON" or "JERK: OFF"
+	_jerkBtn.TextColor3 = _jerkOn and C3_ON or C3_OFF
+	if _jerkOn then
+		pcall(function()
+			local hum = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
+			if not hum then _jerkOn = false; _jerkBtn.Text = "JERK: OFF"; _jerkBtn.TextColor3 = C3_OFF; return end
+			local anim = Instance.new("Animation")
+			anim.AnimationId = "rbxassetid://148840371"
+			_jerkTrack = hum:LoadAnimation(anim)
+			_jerkTrack.Looped = true
+			_jerkTrack:Play()
+		end)
+	else
+		pcall(function()
+			if _jerkTrack then _jerkTrack:Stop(); _jerkTrack:Destroy(); _jerkTrack = nil end
+		end)
+	end
+end)
 
 -- INVI ON/OFF (Visual tab)
 _ivL = _dbtn("INVI: OFF", 3, 4)
