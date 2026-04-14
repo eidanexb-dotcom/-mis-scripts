@@ -1682,7 +1682,7 @@ local function _toggleGrav()
 		_grb.Text = "GRAVEDAD 0: ON"
 		_grb.TextColor3 = C3_ON
 		_gravOG = game.Workspace.Gravity
-		game.Workspace.Gravity = 2
+		game.Workspace.Gravity = 0.1
 		-- ragdoll on
 		pcall(function()
 			local hum = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
@@ -1722,7 +1722,7 @@ local function _toggleGrav()
 			if not _grav then return end
 			if _tick % 15 ~= 0 then return end
 			if game.Workspace.Gravity ~= 25 then
-				game.Workspace.Gravity = 2
+				game.Workspace.Gravity = 0.1
 			end
 		end)
 	else
