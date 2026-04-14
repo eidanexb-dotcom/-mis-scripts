@@ -501,136 +501,112 @@ local function _doRST()
 	if _rstBusy then return end
 	_rstBusy = true
 	_gen = _gen + 1
-	if _mv and _tc then _tc:Disconnect(); _mv = false end
-	pcall(function()
-		local hum = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
-		if hum then hum.Sit = false end
-	end)
-	-- resetear camara
-	pcall(function()
-		local hum = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
-		if hum then game.Workspace.CurrentCamera.CameraSubject = hum end
-	end)
-	-- limpiar noclip
+
+	-- ═══ FASE 1: Desactivar flags (nada nuevo se ejecuta) ═══
 	_noclip = false
-	if _nccon then pcall(function() _nccon:Disconnect() end); _nccon = nil end
+	_bright = false
+	_slide = false
+	_fpsBoost = false
+	_antiTouch = false
+	_xray = false
+	_freeCam = false
+	_antiAfk = false
+	_infJump = false
+	_fling = false
+	_antiRag = false
+	_invis = false
+	_jerkOn = false
+	_grav = false
+	if _mv and _tc then _tc:Disconnect(); _mv = false end
+	task.wait()
+
+	-- ═══ FASE 2: Desconectar TODAS las conexiones ═══
+	local cons = {
+		_nccon, _gravCon, _gravMoveCon, _ijCon, _atCon, _fcCon, _afkCon, _antiRagCharCon,
+	}
+	for _, c in ipairs(cons) do
+		if c then pcall(function() c:Disconnect() end) end
+	end
+	_nccon = nil; _gravCon = nil; _gravMoveCon = nil; _ijCon = nil
+	_atCon = nil; _fcCon = nil; _afkCon = nil; _antiRagCharCon = nil
+	pcall(function() _clearAntiRag() end)
+	task.wait()
+
+	-- ═══ FASE 3: Destruir objetos fisicos (BodyVelocity, BodyGyro, etc) ═══
+	local bodies = { _gravBV, _gravGyro, _fcPart }
+	for _, b in ipairs(bodies) do
+		if b then pcall(function() b:Destroy() end) end
+	end
+	_gravBV = nil; _gravGyro = nil; _fcPart = nil
+	task.wait()
+
+	-- ═══ FASE 4: Restaurar el personaje ═══
+	pcall(function()
+		local hum = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
+		if hum then
+			hum.Sit = false
+			hum.PlatformStand = false
+			hum.WalkSpeed = 16
+			hum:SetStateEnabled(Enum.HumanoidStateType.GettingUp, true)
+			hum:SetStateEnabled(Enum.HumanoidStateType.Running, true)
+			hum:SetStateEnabled(Enum.HumanoidStateType.RunningNoPhysics, true)
+			hum:SetStateEnabled(Enum.HumanoidStateType.Jumping, true)
+			hum:SetStateEnabled(Enum.HumanoidStateType.Landed, true)
+			hum:ChangeState(Enum.HumanoidStateType.GettingUp)
+		end
+		local anim = LP.Character and LP.Character:FindFirstChild("Animate")
+		if anim then anim.Disabled = false end
+	end)
+	-- jerk
+	pcall(function() if _jerkTrack then _jerkTrack:Stop(); _jerkTrack:Destroy(); _jerkTrack = nil end end)
+	-- noclip partes
 	for i = 1, #_ncParts do
 		local p = _ncParts[i]
 		if p and p.Parent then pcall(function() p.CanCollide = true end) end
 	end
 	_ncParts = {}
-	-- restaurar jerk
-	if _jerkOn then
-		_jerkOn = false
-		pcall(function() if _jerkTrack then _jerkTrack:Stop(); _jerkTrack:Destroy(); _jerkTrack = nil end end)
-	end
-	-- restaurar gravedad
-	if _grav then
-		_grav = false
-		if _gravCon then pcall(function() _gravCon:Disconnect() end); _gravCon = nil end
-		if _gravMoveCon then pcall(function() _gravMoveCon:Disconnect() end); _gravMoveCon = nil end
-		if _gravBV then pcall(function() _gravBV:Destroy() end); _gravBV = nil end
-		if _gravGyro then pcall(function() _gravGyro:Destroy() end); _gravGyro = nil end
-		pcall(function() game.Workspace.Gravity = _gravOG or 196.2 end)
-		pcall(function()
-			local hum = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
-			if hum then
-				hum.PlatformStand = false
-				hum:SetStateEnabled(Enum.HumanoidStateType.GettingUp, true)
-				hum:SetStateEnabled(Enum.HumanoidStateType.Running, true)
-				hum:SetStateEnabled(Enum.HumanoidStateType.RunningNoPhysics, true)
-				hum:SetStateEnabled(Enum.HumanoidStateType.Jumping, true)
-				hum:SetStateEnabled(Enum.HumanoidStateType.Landed, true)
-				local anim = LP.Character:FindFirstChild("Animate")
-				if anim then anim.Disabled = false end
+	task.wait()
+
+	-- ═══ FASE 5: Restaurar mundo (gravedad, luz, x-ray, fps) ═══
+	pcall(function() game.Workspace.Gravity = _gravOG or 196.2 end)
+	pcall(function()
+		if _brightOG and _brightOG.amb then
+			Lighting.Ambient = _brightOG.amb
+			Lighting.OutdoorAmbient = _brightOG.out
+			Lighting.Brightness = _brightOG.bright
+			Lighting.FogEnd = _brightOG.fog
+			Lighting.ClockTime = _brightOG.time
+		end
+		for _, e in ipairs(Lighting:GetDescendants()) do
+			if e:IsA("Atmosphere") or e:IsA("ColorCorrectionEffect") or e:IsA("BloomEffect") then
+				e.Enabled = true
 			end
-		end)
-	end
-	-- restaurar luz
-	if _bright then
-		_bright = false
-		pcall(function()
-			if _brightOG.amb then
-				Lighting.Ambient = _brightOG.amb
-				Lighting.OutdoorAmbient = _brightOG.out
-				Lighting.Brightness = _brightOG.bright
-				Lighting.FogEnd = _brightOG.fog
-				Lighting.ClockTime = _brightOG.time
-			end
-			for _, e in ipairs(Lighting:GetDescendants()) do
-				if e:IsA("Atmosphere") or e:IsA("ColorCorrectionEffect") or e:IsA("BloomEffect") then
-					e.Enabled = true
-				end
-			end
-		end)
-	end
-	-- restaurar inf jump
-	if _infJump then
-		_infJump = false
-		if _ijCon then pcall(function() _ijCon:Disconnect() end); _ijCon = nil end
-	end
-	-- restaurar fling (motor externo, re-ejecutar para apagar)
-	if _fling then
-		_fling = false
-		pcall(function()
-			loadstring(game:HttpGet("https://raw.githubusercontent.com/0Ben1/fe/main/obf_rf6iQURzu1fqrytcnLBAvW34C9N55kS9g9G3CKz086rC47M6632sEd4ZZYB0AYgV.lua.txt"))()
-		end)
-	end
-	-- restaurar anti-rag
-	if _antiRag then
-		_antiRag = false
-		if _antiRagCharCon then pcall(function() _antiRagCharCon:Disconnect() end); _antiRagCharCon = nil end
-		_clearAntiRag()
-	end
-	-- restaurar invisibilidad
-	if _invis then
-		_invis = false
-		pcall(function() loadstring(game:HttpGet("https://pastebin.com/raw/3Rnd9rHf"))() end)
-	end
-	-- restaurar walkspeed
-	if _slide then
-		_slide = false
-		pcall(function()
-			local hum = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
-			if hum then hum.WalkSpeed = 16 end
-		end)
-	end
-	-- restaurar fps boost
-	if _fpsBoost then
-		_fpsBoost = false
-		pcall(function() Lighting.GlobalShadows = _fpsOG.gs ~= nil and _fpsOG.gs or true end)
-		for _, v in ipairs(_fpsDisabled) do pcall(function() v.Enabled = true end) end
-		_fpsDisabled = {}
-	end
-	-- restaurar anti-touch
-	if _antiTouch then
-		_antiTouch = false
-		if _atCon then pcall(function() _atCon:Disconnect() end); _atCon = nil end
-	end
-	-- restaurar x-ray
-	if _xray then
-		_xray = false
-		for _, d in ipairs(_xrayParts) do pcall(function() d.part.Transparency = d.orig end) end
-		_xrayParts = {}
-	end
-	-- restaurar free cam
-	if _freeCam then
-		_freeCam = false
-		if _fcCon then pcall(function() _fcCon:Disconnect() end); _fcCon = nil end
-		if _fcPart then pcall(function() _fcPart:Destroy() end); _fcPart = nil end
-		pcall(function()
-			local cam = workspace.CurrentCamera
-			cam.CameraType = Enum.CameraType.Custom
-			local hum = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
-			if hum then cam.CameraSubject = hum end
-		end)
-	end
-	-- restaurar anti-afk
-	if _antiAfk then
-		_antiAfk = false
-		if _afkCon then pcall(function() _afkCon:Disconnect() end); _afkCon = nil end
-	end
-	-- destruir todo y recargar desde GitHub
+		end
+	end)
+	pcall(function() Lighting.GlobalShadows = _fpsOG.gs ~= nil and _fpsOG.gs or true end)
+	for _, v in ipairs(_fpsDisabled) do pcall(function() v.Enabled = true end) end
+	_fpsDisabled = {}
+	for _, d in ipairs(_xrayParts) do pcall(function() d.part.Transparency = d.orig end) end
+	_xrayParts = {}
+	-- camara
+	pcall(function()
+		local cam = workspace.CurrentCamera
+		cam.CameraType = Enum.CameraType.Custom
+		local hum = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
+		if hum then cam.CameraSubject = hum end
+	end)
+	task.wait()
+
+	-- ═══ FASE 6: Apagar motores externos (fling, invis) ═══
+	pcall(function()
+		loadstring(game:HttpGet("https://raw.githubusercontent.com/0Ben1/fe/main/obf_rf6iQURzu1fqrytcnLBAvW34C9N55kS9g9G3CKz086rC47M6632sEd4ZZYB0AYgV.lua.txt"))()
+	end)
+	pcall(function()
+		loadstring(game:HttpGet("https://pastebin.com/raw/3Rnd9rHf"))()
+	end)
+	task.wait()
+
+	-- ═══ FASE 7: Destruir GUI ═══
 	for pl, objs in pairs(_obj) do
 		for _, o in pairs(objs) do pcall(function() o:Destroy() end) end
 	end
@@ -638,6 +614,8 @@ local function _doRST()
 	pcall(function() _dsg:Destroy() end)
 	_G._ESP_LOADED = nil
 	task.wait(0.3)
+
+	-- ═══ FASE 8: Ejecutar desde GitHub (ya no queda nada corriendo) ═══
 	local ok = pcall(function()
 		loadstring(game:HttpGet("https://raw.githubusercontent.com/eidanexb-dotcom/-mis-scripts/refs/heads/main/esp.lua?nocache=" .. tostring(tick()) .. tostring(math.random(100000, 999999)), true))()
 	end)
@@ -1067,15 +1045,21 @@ _jerkBtn.MouseButton1Click:Connect(function()
 		pcall(function()
 			local hum = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
 			if not hum then _jerkOn = false; _jerkBtn.Text = "JERK: OFF"; _jerkBtn.TextColor3 = C3_OFF; return end
+			local animator = hum:FindFirstChildOfClass("Animator")
+			if not animator then
+				animator = Instance.new("Animator")
+				animator.Parent = hum
+			end
 			local anim = Instance.new("Animation")
 			anim.AnimationId = "rbxassetid://148840371"
-			_jerkTrack = hum:LoadAnimation(anim)
+			_jerkTrack = animator:LoadAnimation(anim)
 			_jerkTrack.Looped = true
+			_jerkTrack.Priority = Enum.AnimationPriority.Action4
 			_jerkTrack:Play()
 		end)
 	else
 		pcall(function()
-			if _jerkTrack then _jerkTrack:Stop(); _jerkTrack:Destroy(); _jerkTrack = nil end
+			if _jerkTrack then _jerkTrack:Stop(); _jerkTrack = nil end
 		end)
 	end
 end)
@@ -1153,8 +1137,17 @@ _flb.MouseButton1Click:Connect(function()
 	_flingBusy = false
 end)
 
+-- FLY (vacio, pendiente logica)
+local _flyOn = false
+local _fyb = _dbtn("FLY: OFF", 1, 3)
+_fyb.MouseButton1Click:Connect(function()
+	_flyOn = not _flyOn
+	_fyb.Text = _flyOn and "FLY: ON" or "FLY: OFF"
+	_fyb.TextColor3 = _flyOn and C3_ON or C3_OFF
+end)
+
 -- INF JUMP (salto infinito)
-local _ijb = _dbtn("INF JUMP: OFF", 1, 3)
+local _ijb = _dbtn("INF JUMP: OFF", 2, 3)
 
 _ijb.MouseButton1Click:Connect(function()
 	_infJump = not _infJump
