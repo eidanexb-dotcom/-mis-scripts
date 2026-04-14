@@ -365,16 +365,7 @@ local _ivL
 local _fling = false
 local _flingCon
 local _flyOn = false
-local _flyBV, _flyBG, _flyCon
 local _flySpd = 80
-local _flyStates = {
-	Enum.HumanoidStateType.Climbing, Enum.HumanoidStateType.FallingDown,
-	Enum.HumanoidStateType.Freefall, Enum.HumanoidStateType.GettingUp,
-	Enum.HumanoidStateType.Jumping, Enum.HumanoidStateType.Landed,
-	Enum.HumanoidStateType.Physics, Enum.HumanoidStateType.Ragdoll,
-	Enum.HumanoidStateType.Running, Enum.HumanoidStateType.RunningNoPhysics,
-	Enum.HumanoidStateType.Seated, Enum.HumanoidStateType.Swimming,
-}
 local _infJump = false
 local _ijCon
 local _antiRag = false
@@ -556,7 +547,13 @@ local function _doRST()
 		end)
 	end
 	-- restaurar fly
-	if _flyOn then _stopFly() end
+	if _flyOn then
+		_flyOn = false
+		pcall(function()
+			if _G._CLAUDEX_FLY and _G._CLAUDEX_FLY.stop then _G._CLAUDEX_FLY.stop() end
+			_G._CLAUDEX_FLY.active = false
+		end)
+	end
 	-- restaurar inf jump
 	if _infJump then
 		_infJump = false
@@ -1121,71 +1118,30 @@ _flb.MouseButton1Click:Connect(function()
 	_flingBusy = false
 end)
 
--- FLY (BodyVelocity + BodyGyro, WASD Space Ctrl)
+-- FLY (motor externo, como INVI)
 local _fyb = _dbtn("FLY: OFF", 1, 3)
+local _flyBusy = false
+local _FLY_URL = "https://raw.githubusercontent.com/eidanexb-dotcom/-mis-scripts/refs/heads/main/fly.txt"
 
-local function _stopFly()
-	_flyOn = false
-	if _flyCon then _flyCon:Disconnect(); _flyCon = nil end
-	if _flyBV then pcall(function() _flyBV:Destroy() end); _flyBV = nil end
-	if _flyBG then pcall(function() _flyBG:Destroy() end); _flyBG = nil end
-	pcall(function()
-		local hum = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
-		if hum then
-			hum.PlatformStand = false
-			for _, st in ipairs(_flyStates) do hum:SetStateEnabled(st, true) end
-		end
-		local anim = LP.Character and LP.Character:FindFirstChild("Animate")
-		if anim then anim.Disabled = false end
-	end)
-end
+-- bridge para pasar speed al modulo externo
+if not _G._CLAUDEX_FLY then _G._CLAUDEX_FLY = {} end
+_G._CLAUDEX_FLY.speed = _flySpd
 
 _fyb.MouseButton1Click:Connect(function()
+	if _flyBusy then return end
+	_flyBusy = true
 	_flyOn = not _flyOn
 	_fyb.Text = _flyOn and "FLY: ON" or "FLY: OFF"
 	_fyb.TextColor3 = _flyOn and C3_ON or C3_OFF
-	if _flyOn then
-		local hrp = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
-		local hum = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
-		if not hrp or not hum then _flyOn = false; _fyb.Text = "FLY: OFF"; _fyb.TextColor3 = C3_OFF; return end
-		-- desactivar estados para que no se caiga
-		for _, st in ipairs(_flyStates) do hum:SetStateEnabled(st, false) end
-		hum:ChangeState(Enum.HumanoidStateType.Swimming)
-		hum.PlatformStand = true
-		-- congelar animaciones
-		pcall(function()
-			local anim = LP.Character:FindFirstChild("Animate")
-			if anim then anim.Disabled = true end
-			for _, t in ipairs(hum:GetPlayingAnimationTracks()) do t:AdjustSpeed(0) end
-		end)
-		-- BodyVelocity + BodyGyro
-		_flyBV = Instance.new("BodyVelocity")
-		_flyBV.MaxForce = Vector3.new(9e9, 9e9, 9e9)
-		_flyBV.Velocity = V3_ZERO
-		_flyBV.Parent = hrp
-		_flyBG = Instance.new("BodyGyro")
-		_flyBG.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
-		_flyBG.P = 9e4
-		_flyBG.Parent = hrp
-		_flyCon = RS.Heartbeat:Connect(function()
-			if not _flyOn then return end
-			local r = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
-			if not r then return end
-			local cam = workspace.CurrentCamera
-			local mv = V3_ZERO
-			if UIS:IsKeyDown(Enum.KeyCode.W) then mv = mv + cam.CFrame.LookVector end
-			if UIS:IsKeyDown(Enum.KeyCode.S) then mv = mv - cam.CFrame.LookVector end
-			if UIS:IsKeyDown(Enum.KeyCode.A) then mv = mv - cam.CFrame.RightVector end
-			if UIS:IsKeyDown(Enum.KeyCode.D) then mv = mv + cam.CFrame.RightVector end
-			if UIS:IsKeyDown(Enum.KeyCode.Space) then mv = mv + Vector3.new(0, 1, 0) end
-			if UIS:IsKeyDown(Enum.KeyCode.LeftControl) then mv = mv - Vector3.new(0, 1, 0) end
-			if mv.Magnitude > 0 then mv = mv.Unit * _flySpd end
-			_flyBV.Velocity = mv
-			_flyBG.CFrame = cam.CFrame * CFrame.Angles(-math.rad(mv.Y * 0.5), 0, 0)
-		end)
-	else
-		_stopFly()
-	end
+	_G._CLAUDEX_FLY.active = _flyOn
+	pcall(function()
+		loadstring(game:HttpGet(_FLY_URL))()
+	end)
+	-- sincronizar estado despues del toggle externo
+	_flyOn = _G._CLAUDEX_FLY.active or false
+	_fyb.Text = _flyOn and "FLY: ON" or "FLY: OFF"
+	_fyb.TextColor3 = _flyOn and C3_ON or C3_OFF
+	_flyBusy = false
 end)
 
 -- SLIDER FLY SPEED
@@ -1246,6 +1202,7 @@ local function _updateFlySpd(inputX)
 	_fsFill.Size = UDim2.new(pct, 0, 1, 0)
 	_fsKnob.Position = UDim2.new(pct, -7, 0.5, -7)
 	_fsLabel.Text = "FLY: " .. tostring(_flySpd)
+	_G._CLAUDEX_FLY.speed = _flySpd
 end
 
 _fsBg.InputBegan:Connect(function(input)
@@ -1775,7 +1732,11 @@ LP.CharacterAdded:Connect(function()
 	if _gen ~= _mainGen then return end
 	task.wait(0.5)
 	if _flyOn then
-		_stopFly()
+		_flyOn = false
+		pcall(function()
+			if _G._CLAUDEX_FLY and _G._CLAUDEX_FLY.stop then _G._CLAUDEX_FLY.stop() end
+			_G._CLAUDEX_FLY.active = false
+		end)
 		_fyb.Text = "FLY: OFF"
 		_fyb.TextColor3 = C3_OFF
 	end
