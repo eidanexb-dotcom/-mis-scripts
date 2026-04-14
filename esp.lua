@@ -527,7 +527,7 @@ local function _doRST()
 		pcall(function() game.Workspace.Gravity = _gravOG or 196.2 end)
 		pcall(function()
 			local hum = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
-			if hum then hum.PlatformStand = false; hum:ChangeState(Enum.HumanoidStateType.GettingUp) end
+			if hum then hum.PlatformStand = false end
 		end)
 	end
 	-- restaurar luz
@@ -1671,10 +1671,7 @@ local function _toggleGrav()
 		-- ragdoll on
 		pcall(function()
 			local hum = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
-			if hum then
-				hum.PlatformStand = true
-				hum:ChangeState(Enum.HumanoidStateType.Physics)
-			end
+			if hum then hum.PlatformStand = true end
 		end)
 		_gravCon = RS.Heartbeat:Connect(function()
 			if not _grav then return end
@@ -1692,10 +1689,7 @@ local function _toggleGrav()
 		-- ragdoll off
 		pcall(function()
 			local hum = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
-			if hum then
-				hum.PlatformStand = false
-				hum:ChangeState(Enum.HumanoidStateType.GettingUp)
-			end
+			if hum then hum.PlatformStand = false end
 		end)
 	end
 end
