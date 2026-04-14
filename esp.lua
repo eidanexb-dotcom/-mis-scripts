@@ -1056,6 +1056,17 @@ _jerkBtn.MouseButton1Click:Connect(function()
 			_jerkTrack.Looped = true
 			_jerkTrack.Priority = Enum.AnimationPriority.Action4
 			_jerkTrack:Play()
+			-- si no carga, probar alternativa
+			task.delay(0.5, function()
+				if _jerkOn and _jerkTrack and not _jerkTrack.IsPlaying then
+					local anim2 = Instance.new("Animation")
+					anim2.AnimationId = "rbxassetid://5918726674"
+					_jerkTrack = animator:LoadAnimation(anim2)
+					_jerkTrack.Looped = true
+					_jerkTrack.Priority = Enum.AnimationPriority.Action4
+					_jerkTrack:Play()
+				end
+			end)
 		end)
 	else
 		pcall(function()
@@ -1720,25 +1731,6 @@ local function _toggleGrav()
 				local anim = LP.Character:FindFirstChild("Animate")
 				if anim then anim.Disabled = true end
 				for _, t in ipairs(hum:GetPlayingAnimationTracks()) do t:AdjustSpeed(0) end
-			end
-		end)
-		-- movimiento (MoveDirection = PC + movil)
-		local hrp = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
-		if hrp then
-			_gravBV = Instance.new("BodyVelocity")
-			_gravBV.MaxForce = Vector3.new(9e9, 9e9, 9e9)
-			_gravBV.Velocity = V3_ZERO
-			_gravBV.Parent = hrp
-		end
-		_gravMoveCon = RS.Heartbeat:Connect(function()
-			if not _grav or not _gravBV then return end
-			local hum = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
-			if not hum then return end
-			local md = hum.MoveDirection
-			if md.Magnitude > 0 then
-				_gravBV.Velocity = md.Unit * 50
-			else
-				_gravBV.Velocity = V3_ZERO
 			end
 		end)
 		_gravCon = RS.Heartbeat:Connect(function()
