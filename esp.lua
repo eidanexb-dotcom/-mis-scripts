@@ -364,8 +364,6 @@ local _toggleInvis
 local _ivL
 local _fling = false
 local _flingCon
-local _flyOn = false
-local _flySpd = 80
 local _infJump = false
 local _ijCon
 local _antiRag = false
@@ -527,6 +525,10 @@ local function _doRST()
 		if _gravCon then pcall(function() _gravCon:Disconnect() end); _gravCon = nil end
 		if _gravGyro then pcall(function() _gravGyro:Destroy() end); _gravGyro = nil end
 		pcall(function() game.Workspace.Gravity = _gravOG or 196.2 end)
+		pcall(function()
+			local hum = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
+			if hum then hum.PlatformStand = false; hum:ChangeState(Enum.HumanoidStateType.GettingUp) end
+		end)
 	end
 	-- restaurar luz
 	if _bright then
@@ -544,14 +546,6 @@ local function _doRST()
 					e.Enabled = true
 				end
 			end
-		end)
-	end
-	-- restaurar fly
-	if _flyOn then
-		_flyOn = false
-		pcall(function()
-			if _G._CLAUDEX_FLY and _G._CLAUDEX_FLY.stop then _G._CLAUDEX_FLY.stop() end
-			_G._CLAUDEX_FLY.active = false
 		end)
 	end
 	-- restaurar inf jump
@@ -1118,102 +1112,8 @@ _flb.MouseButton1Click:Connect(function()
 	_flingBusy = false
 end)
 
--- FLY (motor externo, como INVI)
-local _fyb = _dbtn("FLY: OFF", 1, 3)
-local _flyBusy = false
-local _FLY_URL = "https://raw.githubusercontent.com/eidanexb-dotcom/-mis-scripts/refs/heads/main/fly.txt"
-
--- bridge para pasar speed al modulo externo
-if not _G._CLAUDEX_FLY then _G._CLAUDEX_FLY = {} end
-_G._CLAUDEX_FLY.speed = _flySpd
-
-_fyb.MouseButton1Click:Connect(function()
-	if _flyBusy then return end
-	_flyBusy = true
-	_flyOn = not _flyOn
-	_fyb.Text = _flyOn and "FLY: ON" or "FLY: OFF"
-	_fyb.TextColor3 = _flyOn and C3_ON or C3_OFF
-	_G._CLAUDEX_FLY.active = _flyOn
-	pcall(function()
-		loadstring(game:HttpGet(_FLY_URL))()
-	end)
-	-- sincronizar estado despues del toggle externo
-	_flyOn = _G._CLAUDEX_FLY.active or false
-	_fyb.Text = _flyOn and "FLY: ON" or "FLY: OFF"
-	_fyb.TextColor3 = _flyOn and C3_ON or C3_OFF
-	_flyBusy = false
-end)
-
--- SLIDER FLY SPEED
-local _fsMin = 20
-local _fsMax = 500
-
-local _fsFrame = Instance.new("Frame")
-_fsFrame.Size = UDim2.new(1, 0, 0, 30)
-_fsFrame.BackgroundTransparency = 1
-_fsFrame.LayoutOrder = 2
-_fsFrame.Name = _rn()
-_fsFrame.Parent = _tabFrames[3]
-
-local _fsLabel = Instance.new("TextLabel")
-_fsLabel.Size = UDim2.new(0, 65, 1, 0)
-_fsLabel.Position = UDim2.new(0, 0, 0, 0)
-_fsLabel.BackgroundTransparency = 1
-_fsLabel.TextColor3 = Color3.fromRGB(0, 200, 255)
-_fsLabel.Font = Enum.Font.GothamBold
-_fsLabel.TextSize = 9
-_fsLabel.Text = "FLY: " .. _flySpd
-_fsLabel.Name = _rn()
-_fsLabel.Parent = _fsFrame
-
-local _fsBg = Instance.new("Frame")
-_fsBg.Size = UDim2.new(1, -75, 0, 8)
-_fsBg.Position = UDim2.new(0, 70, 0.5, -4)
-_fsBg.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-_fsBg.BorderSizePixel = 0
-_fsBg.Name = _rn()
-_fsBg.Parent = _fsFrame
-Instance.new("UICorner", _fsBg).CornerRadius = UDim.new(0, 4)
-
-local _fsFill = Instance.new("Frame")
-_fsFill.Size = UDim2.new((_flySpd - _fsMin) / (_fsMax - _fsMin), 0, 1, 0)
-_fsFill.BackgroundColor3 = Color3.fromRGB(0, 200, 255)
-_fsFill.BorderSizePixel = 0
-_fsFill.Name = _rn()
-_fsFill.Parent = _fsBg
-Instance.new("UICorner", _fsFill).CornerRadius = UDim.new(0, 4)
-
-local _fsKnob = Instance.new("Frame")
-_fsKnob.Size = UDim2.new(0, 14, 0, 14)
-_fsKnob.Position = UDim2.new((_flySpd - _fsMin) / (_fsMax - _fsMin), -7, 0.5, -7)
-_fsKnob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-_fsKnob.BorderSizePixel = 0
-_fsKnob.Name = _rn()
-_fsKnob.Parent = _fsBg
-Instance.new("UICorner", _fsKnob).CornerRadius = UDim.new(1, 0)
-
-local _fsDrag = false
-
-local function _updateFlySpd(inputX)
-	local bgPos = _fsBg.AbsolutePosition.X
-	local bgSize = _fsBg.AbsoluteSize.X
-	local pct = mclamp((inputX - bgPos) / bgSize, 0, 1)
-	_flySpd = mfloor(_fsMin + pct * (_fsMax - _fsMin))
-	_fsFill.Size = UDim2.new(pct, 0, 1, 0)
-	_fsKnob.Position = UDim2.new(pct, -7, 0.5, -7)
-	_fsLabel.Text = "FLY: " .. tostring(_flySpd)
-	_G._CLAUDEX_FLY.speed = _flySpd
-end
-
-_fsBg.InputBegan:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-		_fsDrag = true
-		_updateFlySpd(input.Position.X)
-	end
-end)
-
 -- INF JUMP (salto infinito)
-local _ijb = _dbtn("INF JUMP: OFF", 3, 3)
+local _ijb = _dbtn("INF JUMP: OFF", 1, 3)
 
 _ijb.MouseButton1Click:Connect(function()
 	_infJump = not _infJump
@@ -1330,7 +1230,7 @@ end
 _xrb.MouseButton1Click:Connect(_toggleXray)
 
 -- FREE CAM (camara libre para espiar)
-_fcb = _dbtn("FREE CAM: OFF", 4, 3)
+_fcb = _dbtn("FREE CAM: OFF", 3, 3)
 
 local function _toggleFreeCam()
 	_freeCam = not _freeCam
@@ -1404,7 +1304,7 @@ local _yupiMax = 1000
 _yuFrame = Instance.new("Frame")
 _yuFrame.Size = UDim2.new(1, 0, 0, 30)
 _yuFrame.BackgroundTransparency = 1
-_yuFrame.LayoutOrder = 5
+_yuFrame.LayoutOrder = 4
 _yuFrame.Name = _rn()
 _yuFrame.Visible = false
 _yuFrame.Parent = _tabFrames[3]
@@ -1473,7 +1373,7 @@ local _spMax = 500
 _spFrame = Instance.new("Frame")
 _spFrame.Size = UDim2.new(1, 0, 0, 30)
 _spFrame.BackgroundTransparency = 1
-_spFrame.LayoutOrder = 6
+_spFrame.LayoutOrder = 5
 _spFrame.Name = _rn()
 _spFrame.Visible = false
 _spFrame.Parent = _tabFrames[3]
@@ -1609,7 +1509,6 @@ UIS.InputChanged:Connect(function(input)
 		if _dragging then _updateSlider(input.Position.X) end
 		if _yuDrag then _updateYupi(input.Position.X) end
 		if _spDrag then _updateTpSpd(input.Position.X) end
-		if _fsDrag then _updateFlySpd(input.Position.X) end
 	end
 end)
 
@@ -1619,7 +1518,6 @@ UIS.InputEnded:Connect(function(input)
 		_dragging = false
 		_yuDrag = false
 		_spDrag = false
-		_fsDrag = false
 	end
 end)
 
@@ -1731,15 +1629,6 @@ end)
 LP.CharacterAdded:Connect(function()
 	if _gen ~= _mainGen then return end
 	task.wait(0.5)
-	if _flyOn then
-		_flyOn = false
-		pcall(function()
-			if _G._CLAUDEX_FLY and _G._CLAUDEX_FLY.stop then _G._CLAUDEX_FLY.stop() end
-			_G._CLAUDEX_FLY.active = false
-		end)
-		_fyb.Text = "FLY: OFF"
-		_fyb.TextColor3 = C3_OFF
-	end
 	if _noclip then _cacheNcParts() end
 	if _grav then _applyGyro() end
 	if _slide then
@@ -1779,6 +1668,14 @@ local function _toggleGrav()
 		_gravOG = game.Workspace.Gravity
 		game.Workspace.Gravity = 2
 		_applyGyro()
+		-- ragdoll on
+		pcall(function()
+			local hum = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
+			if hum then
+				hum.PlatformStand = true
+				hum:ChangeState(Enum.HumanoidStateType.Physics)
+			end
+		end)
 		_gravCon = RS.Heartbeat:Connect(function()
 			if not _grav then return end
 			if _tick % 15 ~= 0 then return end
@@ -1792,6 +1689,14 @@ local function _toggleGrav()
 		if _gravCon then _gravCon:Disconnect(); _gravCon = nil end
 		if _gravGyro then pcall(function() _gravGyro:Destroy() end); _gravGyro = nil end
 		game.Workspace.Gravity = _gravOG or 196.2
+		-- ragdoll off
+		pcall(function()
+			local hum = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
+			if hum then
+				hum.PlatformStand = false
+				hum:ChangeState(Enum.HumanoidStateType.GettingUp)
+			end
+		end)
 	end
 end
 _grb.MouseButton1Click:Connect(_toggleGrav)
