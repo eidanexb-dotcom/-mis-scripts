@@ -1630,7 +1630,12 @@ LP.CharacterAdded:Connect(function()
 	if _gen ~= _mainGen then return end
 	task.wait(0.5)
 	if _noclip then _cacheNcParts() end
-	if _grav then _applyGyro() end
+	if _grav then
+		pcall(function()
+			local hum = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
+			if hum then hum.PlatformStand = true end
+		end)
+	end
 	if _slide then
 		pcall(function()
 			local hum = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
@@ -1667,8 +1672,7 @@ local function _toggleGrav()
 		_grb.TextColor3 = C3_ON
 		_gravOG = game.Workspace.Gravity
 		game.Workspace.Gravity = 2
-		_applyGyro()
-		-- ragdoll on
+		-- ragdoll on (sin BodyGyro para que se caiga)
 		pcall(function()
 			local hum = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
 			if hum then hum.PlatformStand = true end
