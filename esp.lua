@@ -557,7 +557,7 @@ local function _doRST()
 		local anim = LP.Character and LP.Character:FindFirstChild("Animate")
 		if anim then anim.Disabled = false end
 	end)
-	-- jerk (restaurar Motor6D)
+	-- jerk (restaurar Motor6D + reactivar Animate)
 	pcall(function()
 		if _jerkConn then _jerkConn:Disconnect(); _jerkConn = nil end
 		local char = LP.Character
@@ -573,7 +573,9 @@ local function _doRST()
 				if rS and _jerkOrigC0.shoulder then rS.C0 = _jerkOrigC0.shoulder end
 			end
 		end
+		if _jerkAnimScript then _jerkAnimScript.Disabled = false; _jerkAnimScript = nil end
 		_jerkOrigC0 = {}
+		_jerkTracks = {}
 	end)
 	-- noclip partes
 	for i = 1, #_ncParts do
@@ -1049,10 +1051,12 @@ _brb = _dbtn("LUZ: OFF", 2, 1)
 _dsb = _dbtn("DESLIZAMIENTO: OFF", 3, 1)
 _grb = _dbtn("GRAVEDAD 0: OFF", 5, 1)
 
--- JERK (Motor6D directo, sin LoadAnimation)
+-- JERK (Motor6D + para animaciones pa que no pise el CFrame)
 local _jerkOn = false
 local _jerkConn
 local _jerkOrigC0 = {}
+local _jerkAnimScript
+local _jerkTracks = {}
 local _jerkBtn = _dbtn("JERK: OFF", 4, 1)
 _jerkBtn.MouseButton1Click:Connect(function()
 	_jerkOn = not _jerkOn
@@ -1062,6 +1066,24 @@ _jerkBtn.MouseButton1Click:Connect(function()
 		pcall(function()
 			local char = LP.Character
 			if not char then _jerkOn = false; _jerkBtn.Text = "JERK: OFF"; _jerkBtn.TextColor3 = C3_OFF; return end
+			-- parar Animate script pa que no sobreescriba
+			local animScript = char:FindFirstChild("Animate")
+			if animScript then
+				_jerkAnimScript = animScript
+				animScript.Disabled = true
+			end
+			-- parar todos los AnimationTracks activos
+			local hum = char:FindFirstChildOfClass("Humanoid")
+			if hum then
+				local animator = hum:FindFirstChildOfClass("Animator")
+				if animator then
+					_jerkTracks = animator:GetPlayingAnimationTracks()
+					for _, track in ipairs(_jerkTracks) do
+						pcall(function() track:Stop(0) end)
+					end
+				end
+			end
+			task.wait()
 			local isR15 = char:FindFirstChild("UpperTorso") ~= nil
 			_jerkOrigC0 = {}
 			local t = 0
@@ -1072,14 +1094,14 @@ _jerkBtn.MouseButton1Click:Connect(function()
 				local rElbow = rLA and rLA:FindFirstChild("RightElbow")
 				if rShoulder then _jerkOrigC0.shoulder = rShoulder.C0 end
 				if rElbow then _jerkOrigC0.elbow = rElbow.C0 end
-				_jerkConn = RS.Heartbeat:Connect(function(dt)
+				_jerkConn = RS.RenderStepped:Connect(function(dt)
 					if not _jerkOn then return end
 					t = t + dt * 10
 					pcall(function()
-						if rShoulder and _jerkOrigC0.shoulder then
+						if rShoulder then
 							rShoulder.C0 = _jerkOrigC0.shoulder * CFrame.Angles(math.rad(50), 0, math.rad(15))
 						end
-						if rElbow and _jerkOrigC0.elbow then
+						if rElbow then
 							rElbow.C0 = _jerkOrigC0.elbow * CFrame.Angles(math.sin(t) * math.rad(40), 0, 0)
 						end
 					end)
@@ -1088,11 +1110,11 @@ _jerkBtn.MouseButton1Click:Connect(function()
 				local torso = char:FindFirstChild("Torso")
 				local rShoulder = torso and torso:FindFirstChild("Right Shoulder")
 				if rShoulder then _jerkOrigC0.shoulder = rShoulder.C0 end
-				_jerkConn = RS.Heartbeat:Connect(function(dt)
+				_jerkConn = RS.RenderStepped:Connect(function(dt)
 					if not _jerkOn then return end
 					t = t + dt * 10
 					pcall(function()
-						if rShoulder and _jerkOrigC0.shoulder then
+						if rShoulder then
 							rShoulder.C0 = _jerkOrigC0.shoulder * CFrame.Angles(0, math.rad(-60) + math.sin(t) * math.rad(35), math.rad(15))
 						end
 					end)
@@ -1104,6 +1126,7 @@ _jerkBtn.MouseButton1Click:Connect(function()
 			if _jerkConn then _jerkConn:Disconnect(); _jerkConn = nil end
 			local char = LP.Character
 			if char then
+				-- restaurar Motor6D
 				local isR15 = char:FindFirstChild("UpperTorso") ~= nil
 				if isR15 then
 					local rShoulder = char:FindFirstChild("RightUpperArm") and char.RightUpperArm:FindFirstChild("RightShoulder")
@@ -1114,8 +1137,14 @@ _jerkBtn.MouseButton1Click:Connect(function()
 					local rShoulder = char:FindFirstChild("Torso") and char.Torso:FindFirstChild("Right Shoulder")
 					if rShoulder and _jerkOrigC0.shoulder then rShoulder.C0 = _jerkOrigC0.shoulder end
 				end
+				-- reactivar Animate script
+				if _jerkAnimScript then
+					_jerkAnimScript.Disabled = false
+					_jerkAnimScript = nil
+				end
 			end
 			_jerkOrigC0 = {}
+			_jerkTracks = {}
 		end)
 	end
 end)
