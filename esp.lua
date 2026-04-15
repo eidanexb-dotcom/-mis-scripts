@@ -522,7 +522,7 @@ local function _doRST()
 
 	-- ═══ FASE 2: Desconectar TODAS las conexiones ═══
 	local cons = {
-		_nccon, _gravCon, _gravMoveCon, _ijCon, _atCon, _fcCon, _afkCon, _antiRagCharCon, _jerkConn,
+		_nccon, _gravCon, _gravMoveCon, _ijCon, _atCon, _fcCon, _afkCon, _antiRagCharCon,
 	}
 	for _, c in ipairs(cons) do
 		if c then pcall(function() c:Disconnect() end) end
@@ -557,26 +557,9 @@ local function _doRST()
 		local anim = LP.Character and LP.Character:FindFirstChild("Animate")
 		if anim then anim.Disabled = false end
 	end)
-	-- jerk (restaurar Motor6D + reactivar Animate)
-	pcall(function()
-		if _jerkConn then _jerkConn:Disconnect(); _jerkConn = nil end
-		local char = LP.Character
-		if char and _jerkOrigC0 then
-			local isR15 = char:FindFirstChild("UpperTorso") ~= nil
-			if isR15 then
-				local rS = char:FindFirstChild("RightUpperArm") and char.RightUpperArm:FindFirstChild("RightShoulder")
-				local rE = char:FindFirstChild("RightLowerArm") and char.RightLowerArm:FindFirstChild("RightElbow")
-				if rS and _jerkOrigC0.shoulder then rS.C0 = _jerkOrigC0.shoulder end
-				if rE and _jerkOrigC0.elbow then rE.C0 = _jerkOrigC0.elbow end
-			else
-				local rS = char:FindFirstChild("Torso") and char.Torso:FindFirstChild("Right Shoulder")
-				if rS and _jerkOrigC0.shoulder then rS.C0 = _jerkOrigC0.shoulder end
-			end
-		end
-		if _jerkAnimScript then _jerkAnimScript.Disabled = false; _jerkAnimScript = nil end
-		_jerkOrigC0 = {}
-		_jerkTracks = {}
-	end)
+	-- jerk (solo apagar flag, el loop se muere solo)
+	_jerkOn = false
+	_jerkOrigC0 = {}
 	-- noclip partes
 	for i = 1, #_ncParts do
 		local p = _ncParts[i]
@@ -1051,39 +1034,40 @@ _brb = _dbtn("LUZ: OFF", 2, 1)
 _dsb = _dbtn("DESLIZAMIENTO: OFF", 3, 1)
 _grb = _dbtn("GRAVEDAD 0: OFF", 5, 1)
 
--- JERK (Motor6D + para animaciones pa que no pise el CFrame)
+-- JERK (task.spawn loop + Transform override)
 local _jerkOn = false
-local _jerkConn
 local _jerkOrigC0 = {}
-local _jerkAnimScript
-local _jerkTracks = {}
 local _jerkBtn = _dbtn("JERK: OFF", 4, 1)
 _jerkBtn.MouseButton1Click:Connect(function()
 	_jerkOn = not _jerkOn
 	_jerkBtn.Text = _jerkOn and "JERK: ON" or "JERK: OFF"
 	_jerkBtn.TextColor3 = _jerkOn and C3_ON or C3_OFF
 	if _jerkOn then
-		pcall(function()
+		task.spawn(function()
 			local char = LP.Character
 			if not char then _jerkOn = false; _jerkBtn.Text = "JERK: OFF"; _jerkBtn.TextColor3 = C3_OFF; return end
-			-- parar Animate script pa que no sobreescriba
+			-- matar Animate y parar tracks
 			local animScript = char:FindFirstChild("Animate")
-			if animScript then
-				_jerkAnimScript = animScript
-				animScript.Disabled = true
-			end
-			-- parar todos los AnimationTracks activos
+			if animScript then animScript.Disabled = true end
 			local hum = char:FindFirstChildOfClass("Humanoid")
 			if hum then
+				pcall(function()
+					for _, track in ipairs(hum:GetPlayingAnimationTracks()) do
+						track:Stop(0)
+						track:Destroy()
+					end
+				end)
 				local animator = hum:FindFirstChildOfClass("Animator")
 				if animator then
-					_jerkTracks = animator:GetPlayingAnimationTracks()
-					for _, track in ipairs(_jerkTracks) do
-						pcall(function() track:Stop(0) end)
-					end
+					pcall(function()
+						for _, track in ipairs(animator:GetPlayingAnimationTracks()) do
+							track:Stop(0)
+							track:Destroy()
+						end
+					end)
 				end
 			end
-			task.wait()
+			task.wait(0.1)
 			local isR15 = char:FindFirstChild("UpperTorso") ~= nil
 			_jerkOrigC0 = {}
 			local t = 0
@@ -1094,57 +1078,32 @@ _jerkBtn.MouseButton1Click:Connect(function()
 				local rElbow = rLA and rLA:FindFirstChild("RightElbow")
 				if rShoulder then _jerkOrigC0.shoulder = rShoulder.C0 end
 				if rElbow then _jerkOrigC0.elbow = rElbow.C0 end
-				_jerkConn = RS.RenderStepped:Connect(function(dt)
-					if not _jerkOn then return end
-					t = t + dt * 10
-					pcall(function()
-						if rShoulder then
-							rShoulder.C0 = _jerkOrigC0.shoulder * CFrame.Angles(math.rad(50), 0, math.rad(15))
-						end
-						if rElbow then
-							rElbow.C0 = _jerkOrigC0.elbow * CFrame.Angles(math.sin(t) * math.rad(40), 0, 0)
-						end
-					end)
-				end)
+				while _jerkOn and char and char.Parent do
+					t = t + 0.3
+					if rShoulder then
+						rShoulder.Transform = CFrame.Angles(math.rad(50), 0, math.rad(15))
+					end
+					if rElbow then
+						rElbow.Transform = CFrame.Angles(math.sin(t) * math.rad(40), 0, 0)
+					end
+					task.wait()
+				end
 			else
 				local torso = char:FindFirstChild("Torso")
 				local rShoulder = torso and torso:FindFirstChild("Right Shoulder")
 				if rShoulder then _jerkOrigC0.shoulder = rShoulder.C0 end
-				_jerkConn = RS.RenderStepped:Connect(function(dt)
-					if not _jerkOn then return end
-					t = t + dt * 10
-					pcall(function()
-						if rShoulder then
-							rShoulder.C0 = _jerkOrigC0.shoulder * CFrame.Angles(0, math.rad(-60) + math.sin(t) * math.rad(35), math.rad(15))
-						end
-					end)
-				end)
-			end
-		end)
-	else
-		pcall(function()
-			if _jerkConn then _jerkConn:Disconnect(); _jerkConn = nil end
-			local char = LP.Character
-			if char then
-				-- restaurar Motor6D
-				local isR15 = char:FindFirstChild("UpperTorso") ~= nil
-				if isR15 then
-					local rShoulder = char:FindFirstChild("RightUpperArm") and char.RightUpperArm:FindFirstChild("RightShoulder")
-					local rElbow = char:FindFirstChild("RightLowerArm") and char.RightLowerArm:FindFirstChild("RightElbow")
-					if rShoulder and _jerkOrigC0.shoulder then rShoulder.C0 = _jerkOrigC0.shoulder end
-					if rElbow and _jerkOrigC0.elbow then rElbow.C0 = _jerkOrigC0.elbow end
-				else
-					local rShoulder = char:FindFirstChild("Torso") and char.Torso:FindFirstChild("Right Shoulder")
-					if rShoulder and _jerkOrigC0.shoulder then rShoulder.C0 = _jerkOrigC0.shoulder end
-				end
-				-- reactivar Animate script
-				if _jerkAnimScript then
-					_jerkAnimScript.Disabled = false
-					_jerkAnimScript = nil
+				while _jerkOn and char and char.Parent do
+					t = t + 0.3
+					if rShoulder then
+						rShoulder.Transform = CFrame.Angles(0, math.rad(-60) + math.sin(t) * math.rad(35), math.rad(15))
+					end
+					task.wait()
 				end
 			end
-			_jerkOrigC0 = {}
-			_jerkTracks = {}
+			-- al salir del loop, restaurar
+			pcall(function()
+				if animScript then animScript.Disabled = false end
+			end)
 		end)
 	end
 end)
