@@ -1,6 +1,7 @@
 --[[
-	✴ CLAUDEX v3.07
-	Por: Eidanex & Claude Mythos
+	✴ CLAUDEX v3.09
+	Por: Eidanex & Claude
+	ScriptBlox: scriptblox.com
 ]]--
 
 if _G._ESP_LOADED then return end
@@ -398,6 +399,8 @@ local _fyb
 local _flySpd = 80
 local _espOn = true
 local _initPlayer
+local _anchorOn = false
+local _anchorOG = {}
 local Lighting = game:GetService("Lighting")
 
 local _tb = Instance.new("TextButton")
@@ -543,6 +546,7 @@ local function _doRST()
 	_invis = false
 	_jerkOn = false
 	_flyOn = false
+	_anchorOn = false
 	_grav = false
 	if _mv and _tc then _tc:Disconnect(); _mv = false end
 	task.wait()
@@ -589,6 +593,19 @@ local function _doRST()
 	-- jerk (solo apagar flag, el loop se muere solo)
 	_jerkOn = false
 	_jerkOrigC0 = {}
+	-- anclar: restaurar Anchored original
+	pcall(function()
+		local ch = LP.Character
+		if ch then
+			for _, p in ipairs(ch:GetDescendants()) do
+				if p:IsA("BasePart") then
+					local og = _anchorOG[p]
+					pcall(function() p.Anchored = (og ~= nil) and og or false end)
+				end
+			end
+		end
+		_anchorOG = {}
+	end)
 	-- noclip partes
 	for i = 1, #_ncParts do
 		local p = _ncParts[i]
@@ -1719,6 +1736,43 @@ _espTpBtn.MouseButton1Click:Connect(function()
 	end
 end)
 
+-- ANCLAR (congela el personaje anclando todas las partes)
+local _anchorBtn = _dbtn("ANCLAR: OFF", 9, 1)
+
+local function _applyAnchor(ch)
+	if not ch then return end
+	_anchorOG = {}
+	for _, p in ipairs(ch:GetDescendants()) do
+		if p:IsA("BasePart") then
+			_anchorOG[p] = p.Anchored
+			pcall(function() p.Anchored = true end)
+		end
+	end
+end
+
+local function _removeAnchor(ch)
+	if not ch then return end
+	for _, p in ipairs(ch:GetDescendants()) do
+		if p:IsA("BasePart") then
+			local og = _anchorOG[p]
+			pcall(function() p.Anchored = (og ~= nil) and og or false end)
+		end
+	end
+	_anchorOG = {}
+end
+
+_anchorBtn.MouseButton1Click:Connect(function()
+	_anchorOn = not _anchorOn
+	_anchorBtn.Text = _anchorOn and "ANCLAR: ON" or "ANCLAR: OFF"
+	_anchorBtn.TextColor3 = _anchorOn and C3_ON or C3_OFF
+	local ch = LP.Character
+	if _anchorOn then
+		_applyAnchor(ch)
+	else
+		_removeAnchor(ch)
+	end
+end)
+
 -- SLIDER YUPI
 local _yupiMin = 1
 local _yupiMax = 1000
@@ -2079,6 +2133,10 @@ LP.CharacterAdded:Connect(function()
 			_jerkOn = false
 			if _jerkBtn then _jerkBtn.Text = "JERK: OFF"; _jerkBtn.TextColor3 = C3_OFF end
 		end
+	end
+	if _anchorOn then
+		local ch = LP.Character
+		if ch then _applyAnchor(ch) end
 	end
 end)
 
