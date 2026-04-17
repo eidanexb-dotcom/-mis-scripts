@@ -1,4 +1,4 @@
-    local Players = game:GetService("Players")
+local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local Workspace = game:GetService("Workspace")
@@ -211,6 +211,7 @@ local ringPartsEnabled = false
 
 local noclippedParts = {}
 local floorExcluded = {}
+local FLOOR_STICKY_SECONDS = 3
 
 local function getFloorPart()
     local char = LocalPlayer.Character
@@ -220,7 +221,7 @@ local function getFloorPart()
     local params = RaycastParams.new()
     params.FilterDescendantsInstances = {char}
     params.FilterType = Enum.RaycastFilterType.Exclude
-    local result = workspace:Raycast(hrp.Position, Vector3.new(0, -15, 0), params)
+    local result = workspace:Raycast(hrp.Position, Vector3.new(0, -30, 0), params)
     if result then return result.Instance end
     return nil
 end
@@ -233,10 +234,27 @@ local function getExclusionRoot(part)
     return node or part
 end
 
+local function markFloor(instance)
+    floorExcluded[instance] = os.clock() + FLOOR_STICKY_SECONDS
+    if noclippedParts[instance] ~= nil and instance:IsA("BasePart") then
+        instance.CanCollide = noclippedParts[instance]
+        noclippedParts[instance] = nil
+    end
+end
+
+local function cleanupFloor()
+    local now = os.clock()
+    for inst, expiry in pairs(floorExcluded) do
+        if expiry < now or not inst.Parent then
+            floorExcluded[inst] = nil
+        end
+    end
+end
+
 local function isFloorExcluded(part)
     if floorExcluded[part] then return true end
     local root = getExclusionRoot(part)
-    return floorExcluded[root] == true
+    return floorExcluded[root] ~= nil
 end
 
 local function applyNoclip(part)
@@ -298,10 +316,33 @@ end
 workspace.DescendantAdded:Connect(addPart)
 workspace.DescendantRemoving:Connect(removePart)
 
--- Block sitting while tornado is active
+-- Block sitting + slight float while tornado is active
+local FLOAT_OFFSET = 0.3
+local originalHipHeight = nil
+local currentHumanoid = nil
+
+local function applyFloat(humanoid)
+    if not humanoid then return end
+    if originalHipHeight == nil then
+        originalHipHeight = humanoid.HipHeight
+    end
+    humanoid.HipHeight = originalHipHeight + FLOAT_OFFSET
+end
+
+local function restoreFloat(humanoid)
+    if humanoid and originalHipHeight ~= nil then
+        humanoid.HipHeight = originalHipHeight
+    end
+end
+
 local function hookHumanoid(char)
     local humanoid = char:FindFirstChildOfClass("Humanoid") or char:WaitForChild("Humanoid", 5)
     if not humanoid then return end
+    currentHumanoid = humanoid
+    originalHipHeight = humanoid.HipHeight
+    if ringPartsEnabled then
+        applyFloat(humanoid)
+    end
     humanoid:GetPropertyChangedSignal("Sit"):Connect(function()
         if ringPartsEnabled and humanoid.Sit then
             humanoid.Sit = false
@@ -313,16 +354,19 @@ end
 if LocalPlayer.Character then
     hookHumanoid(LocalPlayer.Character)
 end
-LocalPlayer.CharacterAdded:Connect(hookHumanoid)
+LocalPlayer.CharacterAdded:Connect(function(char)
+    originalHipHeight = nil
+    hookHumanoid(char)
+end)
 
 RunService.Heartbeat:Connect(function()
     if not ringPartsEnabled then return end
 
-    floorExcluded = {}
+    cleanupFloor()
     local floorPart = getFloorPart()
     if floorPart then
-        floorExcluded[floorPart] = true
-        floorExcluded[getExclusionRoot(floorPart)] = true
+        markFloor(floorPart)
+        markFloor(getExclusionRoot(floorPart))
     end
 
     local humanoidRootPart = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
@@ -355,15 +399,21 @@ ToggleButton.MouseButton1Click:Connect(function()
     ToggleButton.BackgroundColor3 = ringPartsEnabled and Color3.fromRGB(50, 205, 50) or Color3.fromRGB(160, 82, 45)
     if ringPartsEnabled then
         for _, part in pairs(parts) do
-            applyNoclip(part)
+            if not part.Anchored then
+                applyNoclip(part)
+            end
         end
         local humanoid = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-        if humanoid and humanoid.Sit then
-            humanoid.Sit = false
-            humanoid.SeatPart = nil
+        if humanoid then
+            if humanoid.Sit then
+                humanoid.Sit = false
+                humanoid.SeatPart = nil
+            end
+            applyFloat(humanoid)
         end
     else
         restoreAllNoclip()
+        restoreFloat(currentHumanoid)
     end
 end)
 
