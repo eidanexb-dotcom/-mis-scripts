@@ -1,4 +1,4 @@
-local Players = game:GetService("Players")
+    local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local Workspace = game:GetService("Workspace")
@@ -210,6 +210,34 @@ local attractionStrength = 1000
 local ringPartsEnabled = false
 
 local noclippedParts = {}
+local floorExcluded = {}
+
+local function getFloorPart()
+    local char = LocalPlayer.Character
+    if not char then return nil end
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return nil end
+    local params = RaycastParams.new()
+    params.FilterDescendantsInstances = {char}
+    params.FilterType = Enum.RaycastFilterType.Exclude
+    local result = workspace:Raycast(hrp.Position, Vector3.new(0, -15, 0), params)
+    if result then return result.Instance end
+    return nil
+end
+
+local function getExclusionRoot(part)
+    local node = part
+    while node and node.Parent and node.Parent ~= workspace do
+        node = node.Parent
+    end
+    return node or part
+end
+
+local function isFloorExcluded(part)
+    if floorExcluded[part] then return true end
+    local root = getExclusionRoot(part)
+    return floorExcluded[root] == true
+end
 
 local function applyNoclip(part)
     if part:IsA("BasePart") and not part.Anchored and part:IsDescendantOf(workspace) then
@@ -290,11 +318,18 @@ LocalPlayer.CharacterAdded:Connect(hookHumanoid)
 RunService.Heartbeat:Connect(function()
     if not ringPartsEnabled then return end
 
+    floorExcluded = {}
+    local floorPart = getFloorPart()
+    if floorPart then
+        floorExcluded[floorPart] = true
+        floorExcluded[getExclusionRoot(floorPart)] = true
+    end
+
     local humanoidRootPart = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
     if humanoidRootPart then
         local tornadoCenter = humanoidRootPart.Position
         for _, part in pairs(parts) do
-            if part.Parent and not part.Anchored then
+            if part.Parent and not part.Anchored and not isFloorExcluded(part) then
                 if noclippedParts[part] == nil then
                     applyNoclip(part)
                 end
