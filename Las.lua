@@ -39,8 +39,8 @@ ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
 local MainFrame = Instance.new("Frame")
-MainFrame.Size = UDim2.new(0, 220, 0, 190)
-MainFrame.Position = UDim2.new(0.5, -110, 0.5, -95)
+MainFrame.Size = UDim2.new(0, 220, 0, 240)
+MainFrame.Position = UDim2.new(0.5, -110, 0.5, -120)
 MainFrame.BackgroundColor3 = Color3.fromRGB(204, 0, 0)
 MainFrame.BorderSizePixel = 0
 MainFrame.Parent = ScreenGui
@@ -79,7 +79,7 @@ ToggleCorner.Parent = ToggleButton
 
 local DecreaseRadius = Instance.new("TextButton")
 DecreaseRadius.Size = UDim2.new(0.2, 0, 0, 35)
-DecreaseRadius.Position = UDim2.new(0.1, 0, 0.6, 0)
+DecreaseRadius.Position = UDim2.new(0.1, 0, 0, 90)
 DecreaseRadius.Text = "<"
 DecreaseRadius.BackgroundColor3 = Color3.fromRGB(255, 153, 153)
 DecreaseRadius.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -93,7 +93,7 @@ DecreaseCorner.Parent = DecreaseRadius
 
 local IncreaseRadius = Instance.new("TextButton")
 IncreaseRadius.Size = UDim2.new(0.2, 0, 0, 35)
-IncreaseRadius.Position = UDim2.new(0.7, 0, 0.6, 0)
+IncreaseRadius.Position = UDim2.new(0.7, 0, 0, 90)
 IncreaseRadius.Text = ">"
 IncreaseRadius.BackgroundColor3 = Color3.fromRGB(255, 153, 153)
 IncreaseRadius.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -107,7 +107,7 @@ IncreaseCorner.Parent = IncreaseRadius
 
 local RadiusDisplay = Instance.new("TextLabel")
 RadiusDisplay.Size = UDim2.new(0.4, 0, 0, 35)
-RadiusDisplay.Position = UDim2.new(0.3, 0, 0.6, 0)
+RadiusDisplay.Position = UDim2.new(0.3, 0, 0, 90)
 RadiusDisplay.Text = "Radius: 50"
 RadiusDisplay.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
 RadiusDisplay.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -119,9 +119,51 @@ local RadiusCorner = Instance.new("UICorner")
 RadiusCorner.CornerRadius = UDim.new(0, 10)
 RadiusCorner.Parent = RadiusDisplay
 
+local DecreaseSpeed = Instance.new("TextButton")
+DecreaseSpeed.Size = UDim2.new(0.2, 0, 0, 35)
+DecreaseSpeed.Position = UDim2.new(0.1, 0, 0, 135)
+DecreaseSpeed.Text = "<"
+DecreaseSpeed.BackgroundColor3 = Color3.fromRGB(255, 153, 153)
+DecreaseSpeed.TextColor3 = Color3.fromRGB(255, 255, 255)
+DecreaseSpeed.Font = Enum.Font.Fondamento
+DecreaseSpeed.TextSize = 18
+DecreaseSpeed.Parent = MainFrame
+
+local DecreaseSpeedCorner = Instance.new("UICorner")
+DecreaseSpeedCorner.CornerRadius = UDim.new(0, 10)
+DecreaseSpeedCorner.Parent = DecreaseSpeed
+
+local IncreaseSpeed = Instance.new("TextButton")
+IncreaseSpeed.Size = UDim2.new(0.2, 0, 0, 35)
+IncreaseSpeed.Position = UDim2.new(0.7, 0, 0, 135)
+IncreaseSpeed.Text = ">"
+IncreaseSpeed.BackgroundColor3 = Color3.fromRGB(255, 153, 153)
+IncreaseSpeed.TextColor3 = Color3.fromRGB(255, 255, 255)
+IncreaseSpeed.Font = Enum.Font.Fondamento
+IncreaseSpeed.TextSize = 18
+IncreaseSpeed.Parent = MainFrame
+
+local IncreaseSpeedCorner = Instance.new("UICorner")
+IncreaseSpeedCorner.CornerRadius = UDim.new(0, 10)
+IncreaseSpeedCorner.Parent = IncreaseSpeed
+
+local SpeedDisplay = Instance.new("TextLabel")
+SpeedDisplay.Size = UDim2.new(0.4, 0, 0, 35)
+SpeedDisplay.Position = UDim2.new(0.3, 0, 0, 135)
+SpeedDisplay.Text = "Speed: 1"
+SpeedDisplay.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+SpeedDisplay.TextColor3 = Color3.fromRGB(255, 255, 255)
+SpeedDisplay.Font = Enum.Font.Fondamento
+SpeedDisplay.TextSize = 18
+SpeedDisplay.Parent = MainFrame
+
+local SpeedCorner = Instance.new("UICorner")
+SpeedCorner.CornerRadius = UDim.new(0, 10)
+SpeedCorner.Parent = SpeedDisplay
+
 local Watermark = Instance.new("TextLabel")
 Watermark.Size = UDim2.new(1, 0, 0, 20)
-Watermark.Position = UDim2.new(0, 0, 1, -20)
+Watermark.Position = UDim2.new(0, 0, 1, -25)
 Watermark.Text = ""
 Watermark.TextColor3 = Color3.fromRGB(255, 255, 255)
 Watermark.BackgroundTransparency = 1
@@ -153,14 +195,20 @@ MinimizeButton.MouseButton1Click:Connect(function()
         DecreaseRadius.Visible = false
         IncreaseRadius.Visible = false
         RadiusDisplay.Visible = false
+        DecreaseSpeed.Visible = false
+        IncreaseSpeed.Visible = false
+        SpeedDisplay.Visible = false
         Watermark.Visible = false
     else
-        MainFrame:TweenSize(UDim2.new(0, 220, 0, 190), "Out", "Quad", 0.3, true)
+        MainFrame:TweenSize(UDim2.new(0, 220, 0, 240), "Out", "Quad", 0.3, true)
         MinimizeButton.Text = "-"
         ToggleButton.Visible = true
         DecreaseRadius.Visible = true
         IncreaseRadius.Visible = true
         RadiusDisplay.Visible = true
+        DecreaseSpeed.Visible = true
+        IncreaseSpeed.Visible = true
+        SpeedDisplay.Visible = true
         Watermark.Visible = true
     end
 end)
@@ -378,16 +426,28 @@ RunService.Heartbeat:Connect(function()
                     applyNoclip(part)
                 end
                 local pos = part.Position
-                local distance = (Vector3.new(pos.X, tornadoCenter.Y, pos.Z) - tornadoCenter).Magnitude
+                local horizontalDist = (Vector3.new(pos.X, tornadoCenter.Y, pos.Z) - tornadoCenter).Magnitude
                 local angle = math.atan2(pos.Z - tornadoCenter.Z, pos.X - tornadoCenter.X)
                 local newAngle = angle + math.rad(rotationSpeed)
+
+                local verticalY = tornadoCenter.Y + (height * (math.abs(math.sin((pos.Y - tornadoCenter.Y) / height))))
                 local targetPos = Vector3.new(
-                    tornadoCenter.X + math.cos(newAngle) * math.min(radius, distance),
-                    tornadoCenter.Y + (height * (math.abs(math.sin((pos.Y - tornadoCenter.Y) / height)))),
-                    tornadoCenter.Z + math.sin(newAngle) * math.min(radius, distance)
+                    tornadoCenter.X + math.cos(newAngle) * radius,
+                    verticalY,
+                    tornadoCenter.Z + math.sin(newAngle) * radius
                 )
-                local directionToTarget = (targetPos - part.Position).unit
-                part.Velocity = directionToTarget * attractionStrength
+
+                if horizontalDist > radius * 1.5 or math.abs(pos.Y - tornadoCenter.Y) > height * 1.5 then
+                    part.CFrame = CFrame.new(targetPos)
+                    part.Velocity = Vector3.new(0, 0, 0)
+                end
+
+                local directionToTarget = (targetPos - part.Position)
+                local magnitude = directionToTarget.Magnitude
+                if magnitude > 0 then
+                    local pullStrength = attractionStrength + magnitude * 20
+                    part.Velocity = directionToTarget.Unit * pullStrength
+                end
             end
         end
     end
@@ -425,4 +485,14 @@ end)
 IncreaseRadius.MouseButton1Click:Connect(function()
     radius = math.min(1000, radius + 2)
     RadiusDisplay.Text = "Radius: " .. radius
+end)
+
+DecreaseSpeed.MouseButton1Click:Connect(function()
+    rotationSpeed = math.max(0, rotationSpeed - 1)
+    SpeedDisplay.Text = "Speed: " .. rotationSpeed
+end)
+
+IncreaseSpeed.MouseButton1Click:Connect(function()
+    rotationSpeed = math.min(100, rotationSpeed + 1)
+    SpeedDisplay.Text = "Speed: " .. rotationSpeed
 end)
