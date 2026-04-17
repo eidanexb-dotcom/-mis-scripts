@@ -1,7 +1,6 @@
 --[[
 	✴ CLAUDEX v3.07
-	Por: Eidanex & Claude
-	ScriptBlox: scriptblox.com
+	Por: Eidanex & Claude Mythos
 ]]--
 
 if _G._ESP_LOADED then return end
