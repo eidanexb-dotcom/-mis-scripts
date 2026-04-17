@@ -420,33 +420,42 @@ RunService.Heartbeat:Connect(function()
     local humanoidRootPart = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
     if humanoidRootPart then
         local tornadoCenter = humanoidRootPart.Position
+        local grabRange = radius * 2
         for _, part in pairs(parts) do
             if part.Parent and not part.Anchored and not isFloorExcluded(part) then
-                if noclippedParts[part] == nil then
-                    applyNoclip(part)
-                end
                 local pos = part.Position
                 local horizontalDist = (Vector3.new(pos.X, tornadoCenter.Y, pos.Z) - tornadoCenter).Magnitude
-                local angle = math.atan2(pos.Z - tornadoCenter.Z, pos.X - tornadoCenter.X)
-                local newAngle = angle + math.rad(rotationSpeed)
+                local verticalDist = math.abs(pos.Y - tornadoCenter.Y)
 
-                local verticalY = tornadoCenter.Y + (height * (math.abs(math.sin((pos.Y - tornadoCenter.Y) / height))))
-                local targetPos = Vector3.new(
-                    tornadoCenter.X + math.cos(newAngle) * radius,
-                    verticalY,
-                    tornadoCenter.Z + math.sin(newAngle) * radius
-                )
+                if horizontalDist > grabRange or verticalDist > height * 2 then
+                    if noclippedParts[part] ~= nil then
+                        part.CanCollide = noclippedParts[part]
+                        noclippedParts[part] = nil
+                    end
+                else
+                    if noclippedParts[part] == nil then
+                        applyNoclip(part)
+                    end
+                    local angle = math.atan2(pos.Z - tornadoCenter.Z, pos.X - tornadoCenter.X)
+                    local newAngle = angle + math.rad(rotationSpeed)
+                    local verticalY = tornadoCenter.Y + (height * (math.abs(math.sin((pos.Y - tornadoCenter.Y) / height))))
+                    local targetPos = Vector3.new(
+                        tornadoCenter.X + math.cos(newAngle) * radius,
+                        verticalY,
+                        tornadoCenter.Z + math.sin(newAngle) * radius
+                    )
 
-                if horizontalDist > radius * 1.5 or math.abs(pos.Y - tornadoCenter.Y) > height * 1.5 then
-                    part.CFrame = CFrame.new(targetPos)
-                    part.Velocity = Vector3.new(0, 0, 0)
-                end
+                    if horizontalDist > radius * 1.5 then
+                        part.CFrame = CFrame.new(targetPos)
+                        part.Velocity = Vector3.new(0, 0, 0)
+                    end
 
-                local directionToTarget = (targetPos - part.Position)
-                local magnitude = directionToTarget.Magnitude
-                if magnitude > 0 then
-                    local pullStrength = attractionStrength + magnitude * 20
-                    part.Velocity = directionToTarget.Unit * pullStrength
+                    local directionToTarget = (targetPos - part.Position)
+                    local magnitude = directionToTarget.Magnitude
+                    if magnitude > 0 then
+                        local pullStrength = attractionStrength + magnitude * 20
+                        part.Velocity = directionToTarget.Unit * pullStrength
+                    end
                 end
             end
         end
