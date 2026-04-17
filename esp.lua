@@ -1,5 +1,5 @@
 --[[
-	✴ CLAUDEX v3.0
+	✴ CLAUDEX v3.07
 	Por: Eidanex & Claude
 	ScriptBlox: scriptblox.com
 ]]--
@@ -208,6 +208,7 @@ end
 
 local function _make(pl)
 	if pl == LP then return end
+	if not _espOn then return end
 	local _mg = _gen
 	local function _go(ch)
 		if not ch then return end
@@ -393,9 +394,11 @@ local _jerkOn = false
 local _jerkOrigC0 = {}
 local _jerkBindName = "CX_Jerk_" .. tostring(mrand(100000, 999999))
 local _flyOn = false
-local _flyBV, _flyGyro, _flyCon
+local _flyBV, _flyGyro, _flyCon, _flyStateCon, _flyAnimCon
 local _fyb
 local _flySpd = 80
+local _espOn = true
+local _initPlayer
 local Lighting = game:GetService("Lighting")
 
 local _tb = Instance.new("TextButton")
@@ -410,6 +413,11 @@ _tb.Text = "TP"
 _tb.Name = _rn()
 _tb.Parent = _sg
 Instance.new("UICorner", _tb).CornerRadius = UDim.new(0, 8)
+local _tbStr = Instance.new("UIStroke")
+_tbStr.Color = Color3.fromRGB(0, 200, 255)
+_tbStr.Thickness = 1
+_tbStr.Transparency = 0.5
+_tbStr.Parent = _tb
 
 local _mb = Instance.new("TextButton")
 _mb.Size = UDim2.new(0, 40, 0, 25)
@@ -423,6 +431,11 @@ _mb.Text = "INST"
 _mb.Name = _rn()
 _mb.Parent = _sg
 Instance.new("UICorner", _mb).CornerRadius = UDim.new(0, 6)
+local _mbStr = Instance.new("UIStroke")
+_mbStr.Color = C3_ON
+_mbStr.Thickness = 1
+_mbStr.Transparency = 0.5
+_mbStr.Parent = _mb
 
 local _mdf = Instance.new("Frame")
 _mdf.Size = UDim2.new(0, 80, 0, 158)
@@ -504,6 +517,11 @@ _rst.Text = "RST"
 _rst.Name = _rn()
 _rst.Parent = _sg
 Instance.new("UICorner", _rst).CornerRadius = UDim.new(0, 6)
+local _rstStr = Instance.new("UIStroke")
+_rstStr.Color = Color3.fromRGB(255, 50, 50)
+_rstStr.Thickness = 1
+_rstStr.Transparency = 0.4
+_rstStr.Parent = _rst
 
 local _rstBusy = false
 local function _doRST()
@@ -532,13 +550,14 @@ local function _doRST()
 
 	-- ═══ FASE 2: Desconectar TODAS las conexiones ═══
 	local cons = {
-		_nccon, _gravCon, _gravMoveCon, _ijCon, _atCon, _fcCon, _afkCon, _antiRagCharCon, _flyCon,
+		_nccon, _gravCon, _gravMoveCon, _ijCon, _atCon, _fcCon, _afkCon, _antiRagCharCon, _flyCon, _flyStateCon, _flyAnimCon,
 	}
 	for _, c in ipairs(cons) do
 		if c then pcall(function() c:Disconnect() end) end
 	end
 	_nccon = nil; _gravCon = nil; _gravMoveCon = nil; _ijCon = nil
 	_atCon = nil; _fcCon = nil; _afkCon = nil; _antiRagCharCon = nil; _flyCon = nil
+	_flyStateCon = nil; _flyAnimCon = nil
 	pcall(function() _clearAntiRag() end)
 	pcall(function() RS:UnbindFromRenderStep(_jerkBindName) end)
 	task.wait()
@@ -839,11 +858,23 @@ _tg.Text = ">>>"
 _tg.Name = _rn()
 _tg.Parent = _sg
 Instance.new("UICorner", _tg).CornerRadius = UDim.new(0, 8)
+local _tgStr = Instance.new("UIStroke")
+_tgStr.Color = Color3.fromRGB(255, 180, 100)
+_tgStr.Thickness = 1
+_tgStr.Transparency = 0.3
+_tgStr.Parent = _tg
+local _tgGrad = Instance.new("UIGradient")
+_tgGrad.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 150, 80)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(180, 80, 30)),
+})
+_tgGrad.Rotation = 90
+_tgGrad.Parent = _tg
 
 _tg.MouseButton1Click:Connect(function()
 	_open = not _open
-	_tb.Visible = _open
-	_mb.Visible = _open
+	_tb.Visible = _open and _espOn
+	_mb.Visible = _open and _espOn
 	_rst.Visible = _open
 	if not _open then
 		_lf.Visible = false
@@ -885,6 +916,18 @@ _dtab.Text = "▼ ✴ Claudex ▼"
 _dtab.Name = _rn()
 _dtab.Parent = _dsg
 Instance.new("UICorner", _dtab).CornerRadius = UDim.new(0, 6)
+local _dtGrad = Instance.new("UIGradient")
+_dtGrad.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 150, 80)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(180, 80, 30)),
+})
+_dtGrad.Rotation = 90
+_dtGrad.Parent = _dtab
+local _dtStroke = Instance.new("UIStroke")
+_dtStroke.Color = Color3.fromRGB(255, 180, 100)
+_dtStroke.Thickness = 1
+_dtStroke.Transparency = 0.3
+_dtStroke.Parent = _dtab
 
 _dpanel = Instance.new("Frame")
 _dpanel.Size = UDim2.new(0, 300, 0, 280)
@@ -896,6 +939,19 @@ _dpanel.ClipsDescendants = true
 _dpanel.Name = _rn()
 _dpanel.Parent = _dsg
 Instance.new("UICorner", _dpanel).CornerRadius = UDim.new(0, 10)
+local _dpStroke = Instance.new("UIStroke")
+_dpStroke.Color = C3_CLAUDEX
+_dpStroke.Thickness = 1.5
+_dpStroke.Transparency = 0.4
+_dpStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+_dpStroke.Parent = _dpanel
+local _dpGrad = Instance.new("UIGradient")
+_dpGrad.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(30, 22, 18)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(15, 15, 15)),
+})
+_dpGrad.Rotation = 90
+_dpGrad.Parent = _dpanel
 
 -- Header
 local _dhdr = Instance.new("Frame")
@@ -1037,29 +1093,44 @@ _credits.Name = _rn()
 _credits.Parent = _dpanel
 
 -- Builder: tab 1=General 2=Combate 3=Move 4=Visual
+local _btnHoverInfo = TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 local function _dbtn(txt, order, tab)
 	local b = Instance.new("TextButton")
 	b.Size = UDim2.new(1, 0, 0, 30)
 	b.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-	b.BackgroundTransparency = 0.3
+	b.BackgroundTransparency = 0.25
 	b.TextColor3 = C3_OFF
 	b.Font = Enum.Font.GothamBold
 	b.TextSize = 11
 	b.Text = txt
+	b.AutoButtonColor = false
 	b.LayoutOrder = order
 	b.Name = _rn()
 	b.Parent = _tabFrames[tab or 1]
 	Instance.new("UICorner", b).CornerRadius = UDim.new(0, 6)
+	local st = Instance.new("UIStroke")
+	st.Color = Color3.fromRGB(90, 90, 90)
+	st.Thickness = 1
+	st.Transparency = 0.6
+	st.Parent = b
+	b.MouseEnter:Connect(function()
+		TweenService:Create(b, _btnHoverInfo, {BackgroundTransparency = 0.05}):Play()
+		TweenService:Create(st, _btnHoverInfo, {Transparency = 0.1, Color = C3_CLAUDEX}):Play()
+	end)
+	b.MouseLeave:Connect(function()
+		TweenService:Create(b, _btnHoverInfo, {BackgroundTransparency = 0.25}):Play()
+		TweenService:Create(st, _btnHoverInfo, {Transparency = 0.6, Color = Color3.fromRGB(90, 90, 90)}):Play()
+	end)
 	return b
 end
 
 _ncb = _dbtn("NOCLIP: OFF", 1, 1)
 _brb = _dbtn("LUZ: OFF", 2, 1)
 _dsb = _dbtn("DESLIZAMIENTO: OFF", 3, 1)
-_grb = _dbtn("GRAVEDAD 0: OFF", 5, 1)
+_grb = _dbtn("GRAVEDAD 0: OFF", 6, 1)
 
 -- JERK (BindToRenderStep, prioridad Character+1 para overridear Animator)
-local _jerkBtn = _dbtn("JERK: OFF", 4, 1)
+local _jerkBtn = _dbtn("JERK: OFF", 5, 1)
 
 local function _startJerk()
 	local char = LP.Character
@@ -1202,48 +1273,153 @@ _flb.MouseButton1Click:Connect(function()
 	_flingBusy = false
 end)
 
--- FLY (BodyVelocity + BodyGyro, WASD + Space/LShift)
+-- FLY (estilo LINHMC V4: ControlModule + Lerp + anti-sit + anti-animations)
+-- Mobile y PC, sin noclip incluido (NOCLIP esta aparte como feature)
 _fyb = _dbtn("FLY: OFF", 1, 3)
+
+local _flyLastLook = Vector3.new(0, 0, -1)
+local _flyRotSpd = 0.12
+
+local function _isFlyMoveAnim(id)
+	if not id then return false end
+	local ids = {"180436334", "180436148", "125750702", "180435571", "180435792"}
+	for _, s in ipairs(ids) do
+		if id:find(s) then return true end
+	end
+	return false
+end
+
+local function _getCtrlMod()
+	local ok, cm = pcall(function()
+		local ps = LP:FindFirstChild("PlayerScripts")
+		if not ps then return nil end
+		local pm = ps:FindFirstChild("PlayerModule")
+		if not pm then return nil end
+		local c = pm:FindFirstChild("ControlModule")
+		if not c then return nil end
+		return require(c)
+	end)
+	if ok then return cm end
+	return nil
+end
+
+local function _flyPreventSit(hum)
+	if _flyStateCon then pcall(function() _flyStateCon:Disconnect() end); _flyStateCon = nil end
+	if not hum then return end
+	_flyStateCon = hum.StateChanged:Connect(function(old, new)
+		if not _flyOn then return end
+		if new == Enum.HumanoidStateType.Seated then
+			task.spawn(function()
+				task.wait(0.1)
+				if _flyOn and hum.Parent then
+					pcall(function()
+						hum:ChangeState(Enum.HumanoidStateType.Running)
+						hum.PlatformStand = true
+					end)
+				end
+			end)
+		end
+	end)
+end
+
+local function _flyHandleAnims(hum)
+	if _flyAnimCon then pcall(function() _flyAnimCon:Disconnect() end); _flyAnimCon = nil end
+	if not hum then return end
+	_flyAnimCon = hum.AnimationPlayed:Connect(function(track)
+		if not _flyOn then return end
+		if track.Animation and track.Animation.AnimationId then
+			if _isFlyMoveAnim(track.Animation.AnimationId) then
+				pcall(function() track:Stop() end)
+			end
+		end
+	end)
+end
 
 local function _startFly()
 	local ch = LP.Character
 	if not ch then return false end
-	local hrp = ch:FindFirstChild("HumanoidRootPart")
+	local hrp = ch:FindFirstChild("HumanoidRootPart") or ch:FindFirstChild("Torso")
 	if not hrp then return false end
+	local hum = ch:FindFirstChildOfClass("Humanoid")
+
 	if _flyBV then pcall(function() _flyBV:Destroy() end); _flyBV = nil end
 	if _flyGyro then pcall(function() _flyGyro:Destroy() end); _flyGyro = nil end
+
 	_flyBV = Instance.new("BodyVelocity")
 	_flyBV.MaxForce = Vector3.new(9e9, 9e9, 9e9)
 	_flyBV.Velocity = V3_ZERO
 	_flyBV.Name = _rn()
 	_flyBV.Parent = hrp
+
 	_flyGyro = Instance.new("BodyGyro")
 	_flyGyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
-	_flyGyro.P = 1e5
-	_flyGyro.D = 500
+	_flyGyro.P = 1e4
 	_flyGyro.CFrame = hrp.CFrame
 	_flyGyro.Name = _rn()
 	_flyGyro.Parent = hrp
-	_flyCon = RS.RenderStepped:Connect(function()
+
+	if hum then
+		pcall(function()
+			for _, tr in ipairs(hum:GetPlayingAnimationTracks()) do
+				if tr.Animation and tr.Animation.AnimationId and _isFlyMoveAnim(tr.Animation.AnimationId) then
+					pcall(function() tr:Stop() end)
+				end
+			end
+		end)
+		pcall(function() hum.PlatformStand = true end)
+		_flyPreventSit(hum)
+		_flyHandleAnims(hum)
+	end
+
+	local cm = _getCtrlMod()
+	local cam = workspace.CurrentCamera
+	_flyLastLook = cam.CFrame.LookVector
+
+	_flyCon = RS.Heartbeat:Connect(function()
 		if not _flyOn then return end
 		local cch = LP.Character
 		if not cch then return end
-		local cHrp = cch:FindFirstChild("HumanoidRootPart")
-		if not cHrp then return end
-		local cam = workspace.CurrentCamera
-		if not cam then return end
+		local cHrp = cch:FindFirstChild("HumanoidRootPart") or cch:FindFirstChild("Torso")
+		if not cHrp or not cHrp.Parent then return end
+		local cHum = cch:FindFirstChildOfClass("Humanoid")
+		if cHum and not cHum.PlatformStand then pcall(function() cHum.PlatformStand = true end) end
+
+		local cm2 = cm or _getCtrlMod()
 		local mv = V3_ZERO
-		if UIS:IsKeyDown(Enum.KeyCode.W) then mv = mv + cam.CFrame.LookVector end
-		if UIS:IsKeyDown(Enum.KeyCode.S) then mv = mv - cam.CFrame.LookVector end
-		if UIS:IsKeyDown(Enum.KeyCode.A) then mv = mv - cam.CFrame.RightVector end
-		if UIS:IsKeyDown(Enum.KeyCode.D) then mv = mv + cam.CFrame.RightVector end
-		if UIS:IsKeyDown(Enum.KeyCode.Space) then mv = mv + Vector3.new(0, 1, 0) end
-		if UIS:IsKeyDown(Enum.KeyCode.LeftShift) then mv = mv - Vector3.new(0, 1, 0) end
+		if cm2 then
+			local ok, mvec = pcall(function() return cm2:GetMoveVector() end)
+			if ok and mvec then mv = mvec end
+		end
+		-- fallback PC desktop WASD
+		if UIS:IsKeyDown(Enum.KeyCode.W) then mv = mv + Vector3.new(0, 0, -1) end
+		if UIS:IsKeyDown(Enum.KeyCode.S) then mv = mv + Vector3.new(0, 0, 1) end
+		if UIS:IsKeyDown(Enum.KeyCode.A) then mv = mv + Vector3.new(-1, 0, 0) end
+		if UIS:IsKeyDown(Enum.KeyCode.D) then mv = mv + Vector3.new(1, 0, 0) end
+
+		local vert = 0
+		if UIS:IsKeyDown(Enum.KeyCode.Space) then vert = vert + 1 end
+		if UIS:IsKeyDown(Enum.KeyCode.LeftShift) then vert = vert - 1 end
+
+		local cam2 = workspace.CurrentCamera
+		local target = V3_ZERO
+		if mv.Magnitude > 0 then
+			local dir = cam2.CFrame:VectorToWorldSpace(mv)
+			target = dir.Unit * _flySpd
+		end
+		if vert ~= 0 then
+			target = target + Vector3.new(0, vert * _flySpd, 0)
+		end
 		if _flyBV and _flyBV.Parent then
-			_flyBV.Velocity = (mv.Magnitude > 0) and mv.Unit * _flySpd or V3_ZERO
+			_flyBV.Velocity = _flyBV.Velocity:Lerp(target, 0.25)
 		end
 		if _flyGyro and _flyGyro.Parent then
-			_flyGyro.CFrame = CFrame.new(cHrp.Position, cHrp.Position + cam.CFrame.LookVector)
+			local curLook = cam2.CFrame.LookVector
+			_flyLastLook = _flyLastLook:Lerp(curLook, _flyRotSpd)
+			_flyGyro.CFrame = CFrame.lookAt(cHrp.Position, cHrp.Position + _flyLastLook)
+		end
+		if target.Magnitude == 0 and _flyBV and _flyBV.Velocity.Magnitude < 0.5 then
+			_flyBV.Velocity = V3_ZERO
+			pcall(function() cHrp.AssemblyLinearVelocity = V3_ZERO end)
 		end
 	end)
 	return true
@@ -1251,8 +1427,23 @@ end
 
 local function _stopFly()
 	if _flyCon then pcall(function() _flyCon:Disconnect() end); _flyCon = nil end
+	if _flyStateCon then pcall(function() _flyStateCon:Disconnect() end); _flyStateCon = nil end
+	if _flyAnimCon then pcall(function() _flyAnimCon:Disconnect() end); _flyAnimCon = nil end
 	if _flyBV then pcall(function() _flyBV:Destroy() end); _flyBV = nil end
 	if _flyGyro then pcall(function() _flyGyro:Destroy() end); _flyGyro = nil end
+	local ch = LP.Character
+	if ch then
+		local hum = ch:FindFirstChildOfClass("Humanoid")
+		local hrp = ch:FindFirstChild("HumanoidRootPart") or ch:FindFirstChild("Torso")
+		if hum then
+			pcall(function() hum.PlatformStand = false end)
+			pcall(function() hum:ChangeState(Enum.HumanoidStateType.Running) end)
+		end
+		if hrp then
+			pcall(function() hrp.AssemblyLinearVelocity = V3_ZERO end)
+			pcall(function() hrp.AssemblyAngularVelocity = V3_ZERO end)
+		end
+	end
 end
 
 _fyb.MouseButton1Click:Connect(function()
@@ -1298,26 +1489,59 @@ local function _toggleFpsBoost()
 	_fpbb.Text = _fpsBoost and "FPS BOOST: ON" or "FPS BOOST: OFF"
 	_fpbb.TextColor3 = _fpsBoost and C3_ON or C3_OFF
 	if _fpsBoost then
-		_fpsOG = { gs = Lighting.GlobalShadows }
-		Lighting.GlobalShadows = false
+		_fpsOG = {
+			gs = Lighting.GlobalShadows,
+			gi = Lighting.GlobalIllumination,
+			eb = Lighting.EnvironmentDiffuseScale,
+			es = Lighting.EnvironmentSpecularScale,
+		}
+		pcall(function() Lighting.GlobalShadows = false end)
+		pcall(function() Lighting.GlobalIllumination = 0 end)
+		pcall(function() Lighting.EnvironmentDiffuseScale = 0 end)
+		pcall(function() Lighting.EnvironmentSpecularScale = 0 end)
+		pcall(function() settings().Rendering.QualityLevel = 1 end)
 		_fpsDisabled = {}
 		for _, v in ipairs(workspace:GetDescendants()) do
-			if (v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Beam") or v:IsA("Fire") or v:IsA("Smoke") or v:IsA("Sparkles")) and v.Enabled then
+			if (v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Beam") or v:IsA("Fire") or v:IsA("Smoke") or v:IsA("Sparkles") or v:IsA("Explosion")) and v.Enabled then
+				v.Enabled = false
+				tinsert(_fpsDisabled, v)
+			end
+		end
+		for _, v in ipairs(Lighting:GetDescendants()) do
+			if (v:IsA("BloomEffect") or v:IsA("SunRaysEffect") or v:IsA("DepthOfFieldEffect") or v:IsA("BlurEffect")) and v.Enabled then
 				v.Enabled = false
 				tinsert(_fpsDisabled, v)
 			end
 		end
 		pcall(function()
 			local t = workspace:FindFirstChildOfClass("Terrain")
-			if t then t.WaterWaveSize = 0; t.WaterReflectance = 0; t.Decoration = false end
+			if t then
+				_fpsOG.wws = t.WaterWaveSize
+				_fpsOG.wr = t.WaterReflectance
+				_fpsOG.wt = t.WaterTransparency
+				_fpsOG.dec = t.Decoration
+				t.WaterWaveSize = 0
+				t.WaterReflectance = 0
+				t.WaterTransparency = 1
+				t.Decoration = false
+			end
 		end)
 	else
 		pcall(function() Lighting.GlobalShadows = _fpsOG.gs ~= nil and _fpsOG.gs or true end)
+		pcall(function() if _fpsOG.gi then Lighting.GlobalIllumination = _fpsOG.gi end end)
+		pcall(function() if _fpsOG.eb then Lighting.EnvironmentDiffuseScale = _fpsOG.eb end end)
+		pcall(function() if _fpsOG.es then Lighting.EnvironmentSpecularScale = _fpsOG.es end end)
+		pcall(function() settings().Rendering.QualityLevel = Enum.QualityLevel.Automatic end)
 		for _, v in ipairs(_fpsDisabled) do pcall(function() v.Enabled = true end) end
 		_fpsDisabled = {}
 		pcall(function()
 			local t = workspace:FindFirstChildOfClass("Terrain")
-			if t then t.Decoration = true end
+			if t then
+				if _fpsOG.wws then t.WaterWaveSize = _fpsOG.wws end
+				if _fpsOG.wr then t.WaterReflectance = _fpsOG.wr end
+				if _fpsOG.wt then t.WaterTransparency = _fpsOG.wt end
+				t.Decoration = _fpsOG.dec ~= nil and _fpsOG.dec or true
+			end
 		end)
 	end
 end
@@ -1365,16 +1589,20 @@ local function _toggleXray()
 			if pl.Character then chars[pl.Character] = true end
 		end
 		for _, v in ipairs(workspace:GetDescendants()) do
-			if v:IsA("BasePart") then
+			if v:IsA("BasePart") and not v:IsA("Terrain") then
 				local skip = false
 				for c in pairs(chars) do
 					if v:IsDescendantOf(c) then skip = true; break end
 				end
-				if not skip and v.Transparency < 0.3 and v.Size.Magnitude > 5 then
-					pcall(function()
-						tinsert(_xrayParts, {part = v, orig = v.Transparency})
-						v.Transparency = 0.75
-					end)
+				if not skip and v.Transparency < 0.3 then
+					local sz = v.Size
+					-- solo paredes/techos/pisos grandes (al menos 1 dim >= 10)
+					if math.max(sz.X, sz.Y, sz.Z) >= 10 and v.CanCollide then
+						pcall(function()
+							tinsert(_xrayParts, {part = v, orig = v.Transparency})
+							v.Transparency = 0.75
+						end)
+					end
 				end
 			end
 		end
@@ -1432,7 +1660,7 @@ end
 _fcb.MouseButton1Click:Connect(_toggleFreeCam)
 
 -- ANTI-AFK (no te kickean por inactividad)
-_afkb = _dbtn("ANTI-AFK: OFF", 6, 1)
+_afkb = _dbtn("ANTI-AFK: OFF", 7, 1)
 
 local function _toggleAntiAfk()
 	_antiAfk = not _antiAfk
@@ -1440,20 +1668,57 @@ local function _toggleAntiAfk()
 	_afkb.TextColor3 = _antiAfk and C3_ON or C3_OFF
 	if _antiAfk then
 		local ok, VU = pcall(function() return game:GetService("VirtualUser") end)
-		if ok and VU then
-			_afkCon = LP.Idled:Connect(function()
-				if not _antiAfk then return end
+		_afkCon = LP.Idled:Connect(function()
+			if not _antiAfk then return end
+			if ok and VU then
 				pcall(function()
 					VU:CaptureController()
 					VU:ClickButton2(Vector2.new())
 				end)
-			end)
-		end
+			else
+				-- fallback: jump minimo al aire + move stub (no mueve porque dir cero)
+				pcall(function()
+					local hum = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
+					if hum then
+						hum:ChangeState(Enum.HumanoidStateType.Jumping)
+						hum:Move(Vector3.new(0, 0, 0), true)
+					end
+				end)
+			end
+		end)
 	else
 		if _afkCon then _afkCon:Disconnect(); _afkCon = nil end
 	end
 end
 _afkb.MouseButton1Click:Connect(_toggleAntiAfk)
+
+-- ESP + TP toggle (prende/apaga highlights, billboards y boton TP lateral)
+local _espTpBtn = _dbtn("ESP+TP: ON", 8, 1)
+_espTpBtn.TextColor3 = C3_ON
+_espTpBtn.MouseButton1Click:Connect(function()
+	_espOn = not _espOn
+	_espTpBtn.Text = _espOn and "ESP+TP: ON" or "ESP+TP: OFF"
+	_espTpBtn.TextColor3 = _espOn and C3_ON or C3_OFF
+	if _espOn then
+		if _initPlayer then
+			for _, p in ipairs(Players:GetPlayers()) do
+				pcall(function() _initPlayer(p) end)
+			end
+		end
+		_tb.Visible = _open
+		_mb.Visible = _open
+	else
+		for pl, objs in pairs(_obj) do
+			for _, o in pairs(objs) do pcall(function() o:Destroy() end) end
+		end
+		_obj = {}
+		_tb.Visible = false
+		_mb.Visible = false
+		_lf.Visible = false
+		_mdf.Visible = false
+		if _mv and _tc then pcall(function() _tc:Disconnect() end); _mv = false end
+	end
+end)
 
 -- SLIDER YUPI
 local _yupiMin = 1
@@ -1941,7 +2206,7 @@ end)
 -- ============ INIT ============
 _AT._obj = _obj
 _AT.startWatchdog(5)
-local function _initPlayer(p)
+_initPlayer = function(p)
 	if _pcons[p] then
 		for _, c in pairs(_pcons[p]) do pcall(function() c:Disconnect() end) end
 		_pcons[p] = nil
