@@ -209,6 +209,29 @@ local rotationSpeed = 1
 local attractionStrength = 1000
 local ringPartsEnabled = false
 
+local noclippedParts = {}
+
+local function applyNoclip(part)
+    if part:IsA("BasePart") and not part.Anchored and part:IsDescendantOf(workspace) then
+        if part.Parent == LocalPlayer.Character or part:IsDescendantOf(LocalPlayer.Character) then
+            return
+        end
+        if noclippedParts[part] == nil then
+            noclippedParts[part] = part.CanCollide
+        end
+        part.CanCollide = false
+    end
+end
+
+local function restoreAllNoclip()
+    for part, original in pairs(noclippedParts) do
+        if part and part.Parent then
+            part.CanCollide = original
+        end
+    end
+    noclippedParts = {}
+end
+
 local function RetainPart(Part)
     if Part:IsA("BasePart") and not Part.Anchored and Part:IsDescendantOf(workspace) then
         if Part.Parent == LocalPlayer.Character or Part:IsDescendantOf(LocalPlayer.Character) then
@@ -225,6 +248,9 @@ local function addPart(part)
         if not table.find(parts, part) then
             table.insert(parts, part)
         end
+        if ringPartsEnabled then
+            applyNoclip(part)
+        end
     end
 end
 
@@ -233,6 +259,7 @@ local function removePart(part)
     if index then
         table.remove(parts, index)
     end
+    noclippedParts[part] = nil
 end
 
 for _, part in pairs(workspace:GetDescendants()) do
@@ -241,6 +268,23 @@ end
 
 workspace.DescendantAdded:Connect(addPart)
 workspace.DescendantRemoving:Connect(removePart)
+
+-- Block sitting while tornado is active
+local function hookHumanoid(char)
+    local humanoid = char:FindFirstChildOfClass("Humanoid") or char:WaitForChild("Humanoid", 5)
+    if not humanoid then return end
+    humanoid:GetPropertyChangedSignal("Sit"):Connect(function()
+        if ringPartsEnabled and humanoid.Sit then
+            humanoid.Sit = false
+            humanoid.SeatPart = nil
+        end
+    end)
+end
+
+if LocalPlayer.Character then
+    hookHumanoid(LocalPlayer.Character)
+end
+LocalPlayer.CharacterAdded:Connect(hookHumanoid)
 
 RunService.Heartbeat:Connect(function()
     if not ringPartsEnabled then return end
@@ -270,6 +314,18 @@ ToggleButton.MouseButton1Click:Connect(function()
     ringPartsEnabled = not ringPartsEnabled
     ToggleButton.Text = ringPartsEnabled and "Ring Parts On" or "Ring Parts Off"
     ToggleButton.BackgroundColor3 = ringPartsEnabled and Color3.fromRGB(50, 205, 50) or Color3.fromRGB(160, 82, 45)
+    if ringPartsEnabled then
+        for _, part in pairs(parts) do
+            applyNoclip(part)
+        end
+        local humanoid = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+        if humanoid and humanoid.Sit then
+            humanoid.Sit = false
+            humanoid.SeatPart = nil
+        end
+    else
+        restoreAllNoclip()
+    end
 end)
 
 DecreaseRadius.MouseButton1Click:Connect(function()
