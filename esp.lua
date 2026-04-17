@@ -351,6 +351,8 @@ local _lf
 local _open = true
 local _tg
 local _dsg
+local _dtab, _dpanel, _tinfo
+local _dopen = false
 local _yuFrame
 local _spFrame
 local _noclip, _nccon
@@ -387,6 +389,13 @@ local _fcb
 local _antiAfk = false
 local _afkCon
 local _afkb
+local _jerkOn = false
+local _jerkOrigC0 = {}
+local _jerkBindName = "CX_Jerk_" .. tostring(mrand(100000, 999999))
+local _flyOn = false
+local _flyBV, _flyGyro, _flyCon
+local _fyb
+local _flySpd = 80
 local Lighting = game:GetService("Lighting")
 
 local _tb = Instance.new("TextButton")
@@ -516,28 +525,30 @@ local function _doRST()
 	_antiRag = false
 	_invis = false
 	_jerkOn = false
+	_flyOn = false
 	_grav = false
 	if _mv and _tc then _tc:Disconnect(); _mv = false end
 	task.wait()
 
 	-- ═══ FASE 2: Desconectar TODAS las conexiones ═══
 	local cons = {
-		_nccon, _gravCon, _gravMoveCon, _ijCon, _atCon, _fcCon, _afkCon, _antiRagCharCon,
+		_nccon, _gravCon, _gravMoveCon, _ijCon, _atCon, _fcCon, _afkCon, _antiRagCharCon, _flyCon,
 	}
 	for _, c in ipairs(cons) do
 		if c then pcall(function() c:Disconnect() end) end
 	end
 	_nccon = nil; _gravCon = nil; _gravMoveCon = nil; _ijCon = nil
-	_atCon = nil; _fcCon = nil; _afkCon = nil; _antiRagCharCon = nil
+	_atCon = nil; _fcCon = nil; _afkCon = nil; _antiRagCharCon = nil; _flyCon = nil
 	pcall(function() _clearAntiRag() end)
+	pcall(function() RS:UnbindFromRenderStep(_jerkBindName) end)
 	task.wait()
 
 	-- ═══ FASE 3: Destruir objetos fisicos (BodyVelocity, BodyGyro, etc) ═══
-	local bodies = { _gravBV, _gravGyro, _fcPart }
+	local bodies = { _gravBV, _gravGyro, _fcPart, _flyBV, _flyGyro }
 	for _, b in ipairs(bodies) do
 		if b then pcall(function() b:Destroy() end) end
 	end
-	_gravBV = nil; _gravGyro = nil; _fcPart = nil
+	_gravBV = nil; _gravGyro = nil; _fcPart = nil; _flyBV = nil; _flyGyro = nil
 	task.wait()
 
 	-- ═══ FASE 4: Restaurar el personaje ═══
@@ -834,7 +845,20 @@ _tg.MouseButton1Click:Connect(function()
 	_tb.Visible = _open
 	_mb.Visible = _open
 	_rst.Visible = _open
-	if not _open then _lf.Visible = false; _mdf.Visible = false end
+	if not _open then
+		_lf.Visible = false
+		_mdf.Visible = false
+		if _dopen then
+			_dopen = false
+			pcall(function()
+				TweenService:Create(_dpanel, _tinfo, {Position = UDim2.new(0.5, -150, -1, 0)}):Play()
+				_dtab.Text = "\226\150\188 \226\156\180 Claudex \226\150\188"
+			end)
+		end
+		if _dtab then _dtab.Visible = false end
+	else
+		if _dtab then _dtab.Visible = true end
+	end
 	_tg.Text = ">>>"
 	_tg.BackgroundColor3 = _open and C3_CLAUDEX or Color3.fromRGB(50, 50, 50)
 end)
@@ -843,13 +867,13 @@ end)
 
 _dsg = _gui()
 _AT._tsg = _dsg
-local _dopen = false
+_dopen = false
 _noclip = false
 _nccon = nil
 _bright = false
 _brightOG = {}
 
-local _dtab = Instance.new("TextButton")
+_dtab = Instance.new("TextButton")
 _dtab.Size = UDim2.new(0, 110, 0, 20)
 _dtab.Position = UDim2.new(0.5, -55, 0, 0)
 _dtab.BackgroundColor3 = C3_CLAUDEX
@@ -862,7 +886,7 @@ _dtab.Name = _rn()
 _dtab.Parent = _dsg
 Instance.new("UICorner", _dtab).CornerRadius = UDim.new(0, 6)
 
-local _dpanel = Instance.new("Frame")
+_dpanel = Instance.new("Frame")
 _dpanel.Size = UDim2.new(0, 300, 0, 280)
 _dpanel.Position = UDim2.new(0.5, -150, -1, 0)
 _dpanel.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
@@ -1034,77 +1058,74 @@ _brb = _dbtn("LUZ: OFF", 2, 1)
 _dsb = _dbtn("DESLIZAMIENTO: OFF", 3, 1)
 _grb = _dbtn("GRAVEDAD 0: OFF", 5, 1)
 
--- JERK (task.spawn loop + Transform override)
-local _jerkOn = false
-local _jerkOrigC0 = {}
+-- JERK (BindToRenderStep, prioridad Character+1 para overridear Animator)
 local _jerkBtn = _dbtn("JERK: OFF", 4, 1)
+
+local function _startJerk()
+	local char = LP.Character
+	if not char then return false end
+	local hum = char:FindFirstChildOfClass("Humanoid")
+	local animScript = char:FindFirstChild("Animate")
+	if animScript then pcall(function() animScript.Disabled = true end) end
+	if hum then
+		pcall(function()
+			local animator = hum:FindFirstChildOfClass("Animator") or hum
+			for _, track in ipairs(animator:GetPlayingAnimationTracks()) do
+				pcall(function() track:Stop(0) end)
+			end
+		end)
+	end
+	local isR15 = char:FindFirstChild("UpperTorso") ~= nil
+	local rUA = char:FindFirstChild("RightUpperArm")
+	local rLA = char:FindFirstChild("RightLowerArm")
+	local rShoulder15 = rUA and rUA:FindFirstChild("RightShoulder")
+	local rElbow15 = rLA and rLA:FindFirstChild("RightElbow")
+	local torso = char:FindFirstChild("Torso")
+	local rShoulder6 = torso and torso:FindFirstChild("Right Shoulder")
+	local t = 0
+	local prio = (Enum.RenderPriority and Enum.RenderPriority.Character and Enum.RenderPriority.Character.Value or 300) + 1
+	local ok = pcall(function()
+		RS:BindToRenderStep(_jerkBindName, prio, function()
+			if not _jerkOn then return end
+			t = t + 0.35
+			if isR15 then
+				if rShoulder15 and rShoulder15.Parent then
+					rShoulder15.Transform = CFrame.Angles(math.rad(45), 0, math.rad(15))
+				end
+				if rElbow15 and rElbow15.Parent then
+					rElbow15.Transform = CFrame.Angles(msin(t) * math.rad(50) - math.rad(30), 0, 0)
+				end
+			else
+				if rShoulder6 and rShoulder6.Parent then
+					rShoulder6.Transform = CFrame.Angles(0, math.rad(-55) + msin(t) * math.rad(40), math.rad(15))
+				end
+			end
+		end)
+	end)
+	return ok
+end
+
+local function _stopJerk()
+	pcall(function() RS:UnbindFromRenderStep(_jerkBindName) end)
+	local char = LP.Character
+	if char then
+		local animScript = char:FindFirstChild("Animate")
+		if animScript then pcall(function() animScript.Disabled = false end) end
+	end
+end
+
 _jerkBtn.MouseButton1Click:Connect(function()
 	_jerkOn = not _jerkOn
 	_jerkBtn.Text = _jerkOn and "JERK: ON" or "JERK: OFF"
 	_jerkBtn.TextColor3 = _jerkOn and C3_ON or C3_OFF
 	if _jerkOn then
-		task.spawn(function()
-			local char = LP.Character
-			if not char then _jerkOn = false; _jerkBtn.Text = "JERK: OFF"; _jerkBtn.TextColor3 = C3_OFF; return end
-			-- matar Animate y parar tracks
-			local animScript = char:FindFirstChild("Animate")
-			if animScript then animScript.Disabled = true end
-			local hum = char:FindFirstChildOfClass("Humanoid")
-			if hum then
-				pcall(function()
-					for _, track in ipairs(hum:GetPlayingAnimationTracks()) do
-						track:Stop(0)
-						track:Destroy()
-					end
-				end)
-				local animator = hum:FindFirstChildOfClass("Animator")
-				if animator then
-					pcall(function()
-						for _, track in ipairs(animator:GetPlayingAnimationTracks()) do
-							track:Stop(0)
-							track:Destroy()
-						end
-					end)
-				end
-			end
-			task.wait(0.1)
-			local isR15 = char:FindFirstChild("UpperTorso") ~= nil
-			_jerkOrigC0 = {}
-			local t = 0
-			if isR15 then
-				local rUA = char:FindFirstChild("RightUpperArm")
-				local rLA = char:FindFirstChild("RightLowerArm")
-				local rShoulder = rUA and rUA:FindFirstChild("RightShoulder")
-				local rElbow = rLA and rLA:FindFirstChild("RightElbow")
-				if rShoulder then _jerkOrigC0.shoulder = rShoulder.C0 end
-				if rElbow then _jerkOrigC0.elbow = rElbow.C0 end
-				while _jerkOn and char and char.Parent do
-					t = t + 0.3
-					if rShoulder then
-						rShoulder.Transform = CFrame.Angles(math.rad(50), 0, math.rad(15))
-					end
-					if rElbow then
-						rElbow.Transform = CFrame.Angles(math.sin(t) * math.rad(40), 0, 0)
-					end
-					task.wait()
-				end
-			else
-				local torso = char:FindFirstChild("Torso")
-				local rShoulder = torso and torso:FindFirstChild("Right Shoulder")
-				if rShoulder then _jerkOrigC0.shoulder = rShoulder.C0 end
-				while _jerkOn and char and char.Parent do
-					t = t + 0.3
-					if rShoulder then
-						rShoulder.Transform = CFrame.Angles(0, math.rad(-60) + math.sin(t) * math.rad(35), math.rad(15))
-					end
-					task.wait()
-				end
-			end
-			-- al salir del loop, restaurar
-			pcall(function()
-				if animScript then animScript.Disabled = false end
-			end)
-		end)
+		if not _startJerk() then
+			_jerkOn = false
+			_jerkBtn.Text = "JERK: OFF"
+			_jerkBtn.TextColor3 = C3_OFF
+		end
+	else
+		_stopJerk()
 	end
 end)
 
@@ -1181,13 +1202,72 @@ _flb.MouseButton1Click:Connect(function()
 	_flingBusy = false
 end)
 
--- FLY (vacio, pendiente logica)
-local _flyOn = false
-local _fyb = _dbtn("FLY: OFF", 1, 3)
+-- FLY (BodyVelocity + BodyGyro, WASD + Space/LShift)
+_fyb = _dbtn("FLY: OFF", 1, 3)
+
+local function _startFly()
+	local ch = LP.Character
+	if not ch then return false end
+	local hrp = ch:FindFirstChild("HumanoidRootPart")
+	if not hrp then return false end
+	if _flyBV then pcall(function() _flyBV:Destroy() end); _flyBV = nil end
+	if _flyGyro then pcall(function() _flyGyro:Destroy() end); _flyGyro = nil end
+	_flyBV = Instance.new("BodyVelocity")
+	_flyBV.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+	_flyBV.Velocity = V3_ZERO
+	_flyBV.Name = _rn()
+	_flyBV.Parent = hrp
+	_flyGyro = Instance.new("BodyGyro")
+	_flyGyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+	_flyGyro.P = 1e5
+	_flyGyro.D = 500
+	_flyGyro.CFrame = hrp.CFrame
+	_flyGyro.Name = _rn()
+	_flyGyro.Parent = hrp
+	_flyCon = RS.RenderStepped:Connect(function()
+		if not _flyOn then return end
+		local cch = LP.Character
+		if not cch then return end
+		local cHrp = cch:FindFirstChild("HumanoidRootPart")
+		if not cHrp then return end
+		local cam = workspace.CurrentCamera
+		if not cam then return end
+		local mv = V3_ZERO
+		if UIS:IsKeyDown(Enum.KeyCode.W) then mv = mv + cam.CFrame.LookVector end
+		if UIS:IsKeyDown(Enum.KeyCode.S) then mv = mv - cam.CFrame.LookVector end
+		if UIS:IsKeyDown(Enum.KeyCode.A) then mv = mv - cam.CFrame.RightVector end
+		if UIS:IsKeyDown(Enum.KeyCode.D) then mv = mv + cam.CFrame.RightVector end
+		if UIS:IsKeyDown(Enum.KeyCode.Space) then mv = mv + Vector3.new(0, 1, 0) end
+		if UIS:IsKeyDown(Enum.KeyCode.LeftShift) then mv = mv - Vector3.new(0, 1, 0) end
+		if _flyBV and _flyBV.Parent then
+			_flyBV.Velocity = (mv.Magnitude > 0) and mv.Unit * _flySpd or V3_ZERO
+		end
+		if _flyGyro and _flyGyro.Parent then
+			_flyGyro.CFrame = CFrame.new(cHrp.Position, cHrp.Position + cam.CFrame.LookVector)
+		end
+	end)
+	return true
+end
+
+local function _stopFly()
+	if _flyCon then pcall(function() _flyCon:Disconnect() end); _flyCon = nil end
+	if _flyBV then pcall(function() _flyBV:Destroy() end); _flyBV = nil end
+	if _flyGyro then pcall(function() _flyGyro:Destroy() end); _flyGyro = nil end
+end
+
 _fyb.MouseButton1Click:Connect(function()
 	_flyOn = not _flyOn
 	_fyb.Text = _flyOn and "FLY: ON" or "FLY: OFF"
 	_fyb.TextColor3 = _flyOn and C3_ON or C3_OFF
+	if _flyOn then
+		if not _startFly() then
+			_flyOn = false
+			_fyb.Text = "FLY: OFF"
+			_fyb.TextColor3 = C3_OFF
+		end
+	else
+		_stopFly()
+	end
 end)
 
 -- INF JUMP (salto infinito)
@@ -1720,6 +1800,22 @@ LP.CharacterAdded:Connect(function()
 			if hum then hum.WalkSpeed = _slideSpd end
 		end)
 	end
+	if _flyOn then
+		if _flyCon then pcall(function() _flyCon:Disconnect() end); _flyCon = nil end
+		if _flyBV then pcall(function() _flyBV:Destroy() end); _flyBV = nil end
+		if _flyGyro then pcall(function() _flyGyro:Destroy() end); _flyGyro = nil end
+		if not _startFly() then
+			_flyOn = false
+			if _fyb then _fyb.Text = "FLY: OFF"; _fyb.TextColor3 = C3_OFF end
+		end
+	end
+	if _jerkOn then
+		pcall(function() RS:UnbindFromRenderStep(_jerkBindName) end)
+		if not _startJerk() then
+			_jerkOn = false
+			if _jerkBtn then _jerkBtn.Text = "JERK: OFF"; _jerkBtn.TextColor3 = C3_OFF end
+		end
+	end
 end)
 
 -- GRAVEDAD 0
@@ -1813,7 +1909,7 @@ _toggleInvis = function()
 	_invisBusy = false
 end
 
-local _tinfo = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+_tinfo = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 
 local function _toggleDropdown()
 	_dopen = not _dopen
