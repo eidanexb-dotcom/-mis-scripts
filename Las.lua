@@ -232,23 +232,22 @@ local function restoreAllNoclip()
     noclippedParts = {}
 end
 
-local function RetainPart(Part)
-    if Part:IsA("BasePart") and not Part.Anchored and Part:IsDescendantOf(workspace) then
-        if Part.Parent == LocalPlayer.Character or Part:IsDescendantOf(LocalPlayer.Character) then
-            return false
-        end
-        return true
+local function isTrackable(Part)
+    if not Part:IsA("BasePart") then return false end
+    if not Part:IsDescendantOf(workspace) then return false end
+    if Part.Parent == LocalPlayer.Character or Part:IsDescendantOf(LocalPlayer.Character) then
+        return false
     end
-    return false
+    return true
 end
 
 local parts = {}
 local function addPart(part)
-    if RetainPart(part) then
+    if isTrackable(part) then
         if not table.find(parts, part) then
             table.insert(parts, part)
         end
-        if ringPartsEnabled then
+        if ringPartsEnabled and not part.Anchored then
             applyNoclip(part)
         end
     end
@@ -259,7 +258,9 @@ local function removePart(part)
     if index then
         table.remove(parts, index)
     end
-    noclippedParts[part] = nil
+    if noclippedParts[part] ~= nil then
+        noclippedParts[part] = nil
+    end
 end
 
 for _, part in pairs(workspace:GetDescendants()) do
@@ -294,6 +295,9 @@ RunService.Heartbeat:Connect(function()
         local tornadoCenter = humanoidRootPart.Position
         for _, part in pairs(parts) do
             if part.Parent and not part.Anchored then
+                if noclippedParts[part] == nil then
+                    applyNoclip(part)
+                end
                 local pos = part.Position
                 local distance = (Vector3.new(pos.X, tornadoCenter.Y, pos.Z) - tornadoCenter).Magnitude
                 local angle = math.atan2(pos.Z - tornadoCenter.Z, pos.X - tornadoCenter.X)
