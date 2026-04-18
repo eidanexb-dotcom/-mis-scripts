@@ -5,231 +5,219 @@ local Workspace = game:GetService("Workspace")
 
 local LocalPlayer = Players.LocalPlayer
 
--- Network ownership setup
-if not getgenv().Network then
-    getgenv().Network = {
-        BaseParts = {},
-        Velocity = Vector3.new(14.46262424, 14.46262424, 14.46262424)
-    }
-    Network.RetainPart = function(Part)
-        if typeof(Part) == "Instance" and Part:IsA("BasePart") and Part:IsDescendantOf(workspace) then
-            table.insert(Network.BaseParts, Part)
-            Part.CustomPhysicalProperties = PhysicalProperties.new(0, 0, 0, 0, 0)
-            Part.CanCollide = false
-        end
-    end
-    local function EnablePartControl()
-        LocalPlayer.ReplicationFocus = workspace
-        RunService.Heartbeat:Connect(function()
+-- Network ownership boost (solo SimulationRadius)
+if not getgenv().TornadoNetwork then
+    getgenv().TornadoNetwork = true
+    LocalPlayer.ReplicationFocus = workspace
+    RunService.Heartbeat:Connect(function()
+        pcall(function()
             sethiddenproperty(LocalPlayer, "SimulationRadius", math.huge)
-            for _, Part in pairs(Network.BaseParts) do
-                if Part:IsDescendantOf(workspace) then
-                    Part.Velocity = Network.Velocity
-                end
-            end
         end)
-    end
-    EnablePartControl()
+    end)
 end
 
--- GUI
+-- GUI [STORM THEME]
+local COLORS = {
+    bg        = Color3.fromRGB(18, 22, 35),
+    panel     = Color3.fromRGB(28, 34, 50),
+    accent    = Color3.fromRGB(0, 200, 255),
+    accentDim = Color3.fromRGB(0, 120, 180),
+    active    = Color3.fromRGB(120, 255, 100),
+    danger    = Color3.fromRGB(255, 70, 90),
+    text      = Color3.fromRGB(230, 240, 255),
+    textDim   = Color3.fromRGB(140, 160, 200),
+}
+
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "SuperRingPartsGUI"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
 local MainFrame = Instance.new("Frame")
-MainFrame.Size = UDim2.new(0, 220, 0, 240)
-MainFrame.Position = UDim2.new(0.5, -110, 0.5, -120)
-MainFrame.BackgroundColor3 = Color3.fromRGB(204, 0, 0)
+MainFrame.Size = UDim2.new(0, 240, 0, 310)
+MainFrame.Position = UDim2.new(0.5, -120, 0.5, -155)
+MainFrame.BackgroundColor3 = COLORS.bg
 MainFrame.BorderSizePixel = 0
 MainFrame.Parent = ScreenGui
 
-local UICorner = Instance.new("UICorner")
-UICorner.CornerRadius = UDim.new(0, 20)
-UICorner.Parent = MainFrame
+local mainCorner = Instance.new("UICorner")
+mainCorner.CornerRadius = UDim.new(0, 12)
+mainCorner.Parent = MainFrame
 
+local mainStroke = Instance.new("UIStroke")
+mainStroke.Color = COLORS.accent
+mainStroke.Thickness = 1.5
+mainStroke.Transparency = 0.3
+mainStroke.Parent = MainFrame
+
+-- Title bar
 local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(1, 0, 0, 40)
-Title.Position = UDim2.new(0, 0, 0, 0)
-Title.Text = ""
-Title.TextColor3 = Color3.fromRGB(153, 0, 0)
-Title.BackgroundColor3 = Color3.fromRGB(255, 51, 51)
-Title.Font = Enum.Font.Fondamento
-Title.TextSize = 22
+Title.Size = UDim2.new(1, -16, 0, 42)
+Title.Position = UDim2.new(0, 8, 0, 6)
+Title.Text = "⚡ TORNADO"
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.TextColor3 = COLORS.text
+Title.BackgroundColor3 = COLORS.panel
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 18
 Title.Parent = MainFrame
 
-local TitleCorner = Instance.new("UICorner")
-TitleCorner.CornerRadius = UDim.new(0, 20)
-TitleCorner.Parent = Title
+local titleCorner = Instance.new("UICorner")
+titleCorner.CornerRadius = UDim.new(0, 8)
+titleCorner.Parent = Title
 
-local ToggleButton = Instance.new("TextButton")
-ToggleButton.Size = UDim2.new(0.8, 0, 0, 35)
-ToggleButton.Position = UDim2.new(0.1, 0, 0.3, 0)
-ToggleButton.Text = "Ring Parts Off"
-ToggleButton.BackgroundColor3 = Color3.fromRGB(0, 0, 255)
-ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-ToggleButton.Font = Enum.Font.Fondamento
-ToggleButton.TextSize = 18
-ToggleButton.Parent = MainFrame
+local titlePad = Instance.new("UIPadding")
+titlePad.PaddingLeft = UDim.new(0, 14)
+titlePad.Parent = Title
 
-local ToggleCorner = Instance.new("UICorner")
-ToggleCorner.CornerRadius = UDim.new(0, 10)
-ToggleCorner.Parent = ToggleButton
+local titleGradient = Instance.new("UIGradient")
+titleGradient.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, COLORS.accent),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(180, 100, 255)),
+}
+titleGradient.Parent = Title
 
-local DecreaseRadius = Instance.new("TextButton")
-DecreaseRadius.Size = UDim2.new(0.2, 0, 0, 35)
-DecreaseRadius.Position = UDim2.new(0.1, 0, 0, 90)
-DecreaseRadius.Text = "<"
-DecreaseRadius.BackgroundColor3 = Color3.fromRGB(255, 153, 153)
-DecreaseRadius.TextColor3 = Color3.fromRGB(255, 255, 255)
-DecreaseRadius.Font = Enum.Font.Fondamento
-DecreaseRadius.TextSize = 18
-DecreaseRadius.Parent = MainFrame
+local function makeButton(text, posX, posY, sizeX, color)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(sizeX, 0, 0, 32)
+    btn.Position = UDim2.new(posX, 0, 0, posY)
+    btn.Text = text
+    btn.AutoButtonColor = false
+    btn.BackgroundColor3 = color or COLORS.panel
+    btn.TextColor3 = COLORS.text
+    btn.Font = Enum.Font.GothamMedium
+    btn.TextSize = 14
+    btn.Parent = MainFrame
 
-local DecreaseCorner = Instance.new("UICorner")
-DecreaseCorner.CornerRadius = UDim.new(0, 10)
-DecreaseCorner.Parent = DecreaseRadius
+    local c = Instance.new("UICorner")
+    c.CornerRadius = UDim.new(0, 8)
+    c.Parent = btn
 
-local IncreaseRadius = Instance.new("TextButton")
-IncreaseRadius.Size = UDim2.new(0.2, 0, 0, 35)
-IncreaseRadius.Position = UDim2.new(0.7, 0, 0, 90)
-IncreaseRadius.Text = ">"
-IncreaseRadius.BackgroundColor3 = Color3.fromRGB(255, 153, 153)
-IncreaseRadius.TextColor3 = Color3.fromRGB(255, 255, 255)
-IncreaseRadius.Font = Enum.Font.Fondamento
-IncreaseRadius.TextSize = 18
-IncreaseRadius.Parent = MainFrame
+    local s = Instance.new("UIStroke")
+    s.Color = COLORS.accentDim
+    s.Thickness = 1
+    s.Transparency = 0.5
+    s.Parent = btn
 
-local IncreaseCorner = Instance.new("UICorner")
-IncreaseCorner.CornerRadius = UDim.new(0, 10)
-IncreaseCorner.Parent = IncreaseRadius
+    btn.MouseEnter:Connect(function()
+        s.Transparency = 0
+    end)
+    btn.MouseLeave:Connect(function()
+        s.Transparency = 0.5
+    end)
+    return btn
+end
 
-local RadiusDisplay = Instance.new("TextLabel")
-RadiusDisplay.Size = UDim2.new(0.4, 0, 0, 35)
-RadiusDisplay.Position = UDim2.new(0.3, 0, 0, 90)
-RadiusDisplay.Text = "Radius: 50"
-RadiusDisplay.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-RadiusDisplay.TextColor3 = Color3.fromRGB(255, 255, 255)
-RadiusDisplay.Font = Enum.Font.Fondamento
-RadiusDisplay.TextSize = 18
-RadiusDisplay.Parent = MainFrame
+local function makeLabel(text, posX, posY, sizeX)
+    local lbl = Instance.new("TextLabel")
+    lbl.Size = UDim2.new(sizeX, 0, 0, 32)
+    lbl.Position = UDim2.new(posX, 0, 0, posY)
+    lbl.Text = text
+    lbl.BackgroundColor3 = COLORS.bg
+    lbl.TextColor3 = COLORS.accent
+    lbl.Font = Enum.Font.GothamBold
+    lbl.TextSize = 14
+    lbl.Parent = MainFrame
 
-local RadiusCorner = Instance.new("UICorner")
-RadiusCorner.CornerRadius = UDim.new(0, 10)
-RadiusCorner.Parent = RadiusDisplay
+    local c = Instance.new("UICorner")
+    c.CornerRadius = UDim.new(0, 8)
+    c.Parent = lbl
 
-local DecreaseSpeed = Instance.new("TextButton")
-DecreaseSpeed.Size = UDim2.new(0.2, 0, 0, 35)
-DecreaseSpeed.Position = UDim2.new(0.1, 0, 0, 135)
-DecreaseSpeed.Text = "<"
-DecreaseSpeed.BackgroundColor3 = Color3.fromRGB(255, 153, 153)
-DecreaseSpeed.TextColor3 = Color3.fromRGB(255, 255, 255)
-DecreaseSpeed.Font = Enum.Font.Fondamento
-DecreaseSpeed.TextSize = 18
-DecreaseSpeed.Parent = MainFrame
+    local s = Instance.new("UIStroke")
+    s.Color = COLORS.accentDim
+    s.Thickness = 1
+    s.Transparency = 0.6
+    s.Parent = lbl
+    return lbl
+end
 
-local DecreaseSpeedCorner = Instance.new("UICorner")
-DecreaseSpeedCorner.CornerRadius = UDim.new(0, 10)
-DecreaseSpeedCorner.Parent = DecreaseSpeed
+local ToggleButton = makeButton("◯  RING PARTS  OFF", 0.06, 60, 0.88)
 
-local IncreaseSpeed = Instance.new("TextButton")
-IncreaseSpeed.Size = UDim2.new(0.2, 0, 0, 35)
-IncreaseSpeed.Position = UDim2.new(0.7, 0, 0, 135)
-IncreaseSpeed.Text = ">"
-IncreaseSpeed.BackgroundColor3 = Color3.fromRGB(255, 153, 153)
-IncreaseSpeed.TextColor3 = Color3.fromRGB(255, 255, 255)
-IncreaseSpeed.Font = Enum.Font.Fondamento
-IncreaseSpeed.TextSize = 18
-IncreaseSpeed.Parent = MainFrame
+local DecreaseRadius = makeButton("−", 0.06, 105, 0.17)
+local RadiusDisplay = makeLabel("RADIUS  50", 0.25, 105, 0.5)
+local IncreaseRadius = makeButton("+", 0.77, 105, 0.17)
 
-local IncreaseSpeedCorner = Instance.new("UICorner")
-IncreaseSpeedCorner.CornerRadius = UDim.new(0, 10)
-IncreaseSpeedCorner.Parent = IncreaseSpeed
+local DecreaseSpeed = makeButton("−", 0.06, 145, 0.17)
+local SpeedDisplay = makeLabel("SPEED  1", 0.25, 145, 0.5)
+local IncreaseSpeed = makeButton("+", 0.77, 145, 0.17)
 
-local SpeedDisplay = Instance.new("TextLabel")
-SpeedDisplay.Size = UDim2.new(0.4, 0, 0, 35)
-SpeedDisplay.Position = UDim2.new(0.3, 0, 0, 135)
-SpeedDisplay.Text = "Speed: 1"
-SpeedDisplay.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-SpeedDisplay.TextColor3 = Color3.fromRGB(255, 255, 255)
-SpeedDisplay.Font = Enum.Font.Fondamento
-SpeedDisplay.TextSize = 18
-SpeedDisplay.Parent = MainFrame
+local DecreaseStrength = makeButton("−", 0.06, 185, 0.17)
+local StrengthDisplay = makeLabel("POWER  1000", 0.25, 185, 0.5)
+local IncreaseStrength = makeButton("+", 0.77, 185, 0.17)
 
-local SpeedCorner = Instance.new("UICorner")
-SpeedCorner.CornerRadius = UDim.new(0, 10)
-SpeedCorner.Parent = SpeedDisplay
+local CloseScript = makeButton("✕  DESTROY", 0.06, 235, 0.88, COLORS.panel)
+CloseScript.TextColor3 = COLORS.danger
 
-local Watermark = Instance.new("TextLabel")
-Watermark.Size = UDim2.new(1, 0, 0, 20)
-Watermark.Position = UDim2.new(0, 0, 1, -25)
-Watermark.Text = ""
-Watermark.TextColor3 = Color3.fromRGB(255, 255, 255)
-Watermark.BackgroundTransparency = 1
-Watermark.Font = Enum.Font.Fondamento
-Watermark.TextSize = 14
-Watermark.Parent = MainFrame
+-- Footer status dot
+local StatusDot = Instance.new("Frame")
+StatusDot.Size = UDim2.new(0, 8, 0, 8)
+StatusDot.Position = UDim2.new(0, 12, 1, -18)
+StatusDot.BackgroundColor3 = COLORS.danger
+StatusDot.BorderSizePixel = 0
+StatusDot.Parent = MainFrame
+local dotCorner = Instance.new("UICorner")
+dotCorner.CornerRadius = UDim.new(1, 0)
+dotCorner.Parent = StatusDot
+
+local StatusText = Instance.new("TextLabel")
+StatusText.Size = UDim2.new(1, -28, 0, 14)
+StatusText.Position = UDim2.new(0, 26, 1, -22)
+StatusText.Text = "idle"
+StatusText.TextXAlignment = Enum.TextXAlignment.Left
+StatusText.TextColor3 = COLORS.textDim
+StatusText.BackgroundTransparency = 1
+StatusText.Font = Enum.Font.Gotham
+StatusText.TextSize = 11
+StatusText.Parent = MainFrame
 
 local MinimizeButton = Instance.new("TextButton")
-MinimizeButton.Size = UDim2.new(0, 30, 0, 30)
-MinimizeButton.Position = UDim2.new(1, -35, 0, 5)
-MinimizeButton.Text = "-"
-MinimizeButton.BackgroundColor3 = Color3.fromRGB(0, 0, 255)
-MinimizeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-MinimizeButton.Font = Enum.Font.Fondamento
-MinimizeButton.TextSize = 18
+MinimizeButton.Size = UDim2.new(0, 26, 0, 26)
+MinimizeButton.Position = UDim2.new(1, -32, 0, 14)
+MinimizeButton.Text = "—"
+MinimizeButton.AutoButtonColor = false
+MinimizeButton.BackgroundColor3 = COLORS.bg
+MinimizeButton.TextColor3 = COLORS.accent
+MinimizeButton.Font = Enum.Font.GothamBold
+MinimizeButton.TextSize = 14
 MinimizeButton.Parent = MainFrame
 
-local MinimizeCorner = Instance.new("UICorner")
-MinimizeCorner.CornerRadius = UDim.new(0, 15)
-MinimizeCorner.Parent = MinimizeButton
+local minCorner = Instance.new("UICorner")
+minCorner.CornerRadius = UDim.new(0, 6)
+minCorner.Parent = MinimizeButton
+
+local minStroke = Instance.new("UIStroke")
+minStroke.Color = COLORS.accent
+minStroke.Thickness = 1
+minStroke.Transparency = 0.4
+minStroke.Parent = MinimizeButton
+
+local hideable = {ToggleButton, DecreaseRadius, IncreaseRadius, RadiusDisplay,
+    DecreaseSpeed, IncreaseSpeed, SpeedDisplay,
+    DecreaseStrength, IncreaseStrength, StrengthDisplay, CloseScript,
+    StatusDot, StatusText}
 
 local minimized = false
 MinimizeButton.MouseButton1Click:Connect(function()
     minimized = not minimized
     if minimized then
-        MainFrame:TweenSize(UDim2.new(0, 220, 0, 40), "Out", "Quad", 0.3, true)
+        MainFrame:TweenSize(UDim2.new(0, 240, 0, 54), "Out", "Quad", 0.25, true)
         MinimizeButton.Text = "+"
-        ToggleButton.Visible = false
-        DecreaseRadius.Visible = false
-        IncreaseRadius.Visible = false
-        RadiusDisplay.Visible = false
-        DecreaseSpeed.Visible = false
-        IncreaseSpeed.Visible = false
-        SpeedDisplay.Visible = false
-        Watermark.Visible = false
+        for _, el in ipairs(hideable) do el.Visible = false end
     else
-        MainFrame:TweenSize(UDim2.new(0, 220, 0, 240), "Out", "Quad", 0.3, true)
-        MinimizeButton.Text = "-"
-        ToggleButton.Visible = true
-        DecreaseRadius.Visible = true
-        IncreaseRadius.Visible = true
-        RadiusDisplay.Visible = true
-        DecreaseSpeed.Visible = true
-        IncreaseSpeed.Visible = true
-        SpeedDisplay.Visible = true
-        Watermark.Visible = true
+        MainFrame:TweenSize(UDim2.new(0, 240, 0, 310), "Out", "Quad", 0.25, true)
+        MinimizeButton.Text = "—"
+        for _, el in ipairs(hideable) do el.Visible = true end
     end
 end)
 
 -- Drag
-local dragging
-local dragInput
-local dragStart
-local startPos
-
-local function update(input)
-    local delta = input.Position - dragStart
-    MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-end
+local dragging, dragInput, dragStart, startPos
 
 MainFrame.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
         dragging = true
         dragStart = input.Position
         startPos = MainFrame.Position
-
         input.Changed:Connect(function()
             if input.UserInputState == Enum.UserInputState.End then
                 dragging = false
@@ -246,11 +234,12 @@ end)
 
 UserInputService.InputChanged:Connect(function(input)
     if input == dragInput and dragging then
-        update(input)
+        local delta = input.Position - dragStart
+        MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
     end
 end)
 
--- Tornado logic
+-- Tornado state
 local radius = 50
 local height = 100
 local rotationSpeed = 1
@@ -361,13 +350,14 @@ for _, part in pairs(workspace:GetDescendants()) do
     addPart(part)
 end
 
-workspace.DescendantAdded:Connect(addPart)
-workspace.DescendantRemoving:Connect(removePart)
+local addedConn = workspace.DescendantAdded:Connect(addPart)
+local removedConn = workspace.DescendantRemoving:Connect(removePart)
 
--- Block sitting + slight float while tornado is active
+-- Block sit + slight float
 local FLOAT_OFFSET = 0.3
 local originalHipHeight = nil
 local currentHumanoid = nil
+local sitConn = nil
 
 local function applyFloat(humanoid)
     if not humanoid then return end
@@ -389,44 +379,55 @@ local function hookHumanoid(char)
     currentHumanoid = humanoid
     originalHipHeight = humanoid.HipHeight
     if ringPartsEnabled then
-        applyFloat(humanoid)
+        pcall(applyFloat, humanoid)
     end
-    humanoid:GetPropertyChangedSignal("Sit"):Connect(function()
-        if ringPartsEnabled and humanoid.Sit then
-            humanoid.Sit = false
-            humanoid.SeatPart = nil
-        end
+    if sitConn then sitConn:Disconnect() end
+    sitConn = humanoid:GetPropertyChangedSignal("Sit"):Connect(function()
+        pcall(function()
+            if ringPartsEnabled and humanoid.Sit then
+                humanoid.Sit = false
+                humanoid.SeatPart = nil
+            end
+        end)
     end)
 end
 
 if LocalPlayer.Character then
     hookHumanoid(LocalPlayer.Character)
 end
-LocalPlayer.CharacterAdded:Connect(function(char)
+local charConn = LocalPlayer.CharacterAdded:Connect(function(char)
     originalHipHeight = nil
     hookHumanoid(char)
 end)
 
-RunService.Heartbeat:Connect(function()
+-- Tornado heartbeat (LOGICA INTACTA)
+local tornadoConn
+tornadoConn = RunService.Heartbeat:Connect(function()
     if not ringPartsEnabled then return end
 
-    cleanupFloor()
-    local floorPart = getFloorPart()
-    if floorPart then
-        markFloor(floorPart)
-        markFloor(getExclusionRoot(floorPart))
-    end
+    pcall(function()
+        cleanupFloor()
+        local floorPart = getFloorPart()
+        if floorPart then
+            markFloor(floorPart)
+            markFloor(getExclusionRoot(floorPart))
+        end
+    end)
 
     local humanoidRootPart = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-    if humanoidRootPart then
-        local tornadoCenter = humanoidRootPart.Position
-        for _, part in pairs(parts) do
+    if not humanoidRootPart then return end
+
+    local tornadoCenter = humanoidRootPart.Position
+    for _, part in pairs(parts) do
+        pcall(function()
             if part.Parent and not part.Anchored and not isFloorExcluded(part) then
                 if noclippedParts[part] == nil then
                     applyNoclip(part)
                 end
                 local pos = part.Position
-                local distance = (Vector3.new(pos.X, tornadoCenter.Y, pos.Z) - tornadoCenter).Magnitude
+                local flatDelta = Vector3.new(pos.X - tornadoCenter.X, 0, pos.Z - tornadoCenter.Z)
+                local distance = flatDelta.Magnitude
+                if distance < 0.01 then return end
                 local angle = math.atan2(pos.Z - tornadoCenter.Z, pos.X - tornadoCenter.X)
                 local newAngle = angle + math.rad(rotationSpeed)
                 local targetPos = Vector3.new(
@@ -434,17 +435,21 @@ RunService.Heartbeat:Connect(function()
                     tornadoCenter.Y + (height * (math.abs(math.sin((pos.Y - tornadoCenter.Y) / height)))),
                     tornadoCenter.Z + math.sin(newAngle) * math.min(radius, distance)
                 )
-                local directionToTarget = (targetPos - part.Position).unit
-                part.Velocity = directionToTarget * attractionStrength
+                local delta = targetPos - part.Position
+                if delta.Magnitude < 0.01 then return end
+                part.Velocity = delta.Unit * attractionStrength
             end
-        end
+        end)
     end
 end)
 
 ToggleButton.MouseButton1Click:Connect(function()
     ringPartsEnabled = not ringPartsEnabled
-    ToggleButton.Text = ringPartsEnabled and "Ring Parts On" or "Ring Parts Off"
-    ToggleButton.BackgroundColor3 = ringPartsEnabled and Color3.fromRGB(50, 205, 50) or Color3.fromRGB(160, 82, 45)
+    ToggleButton.Text = ringPartsEnabled and "●  RING PARTS  ON" or "◯  RING PARTS  OFF"
+    ToggleButton.BackgroundColor3 = ringPartsEnabled and COLORS.active or COLORS.panel
+    ToggleButton.TextColor3 = ringPartsEnabled and COLORS.bg or COLORS.text
+    StatusDot.BackgroundColor3 = ringPartsEnabled and COLORS.active or COLORS.danger
+    StatusText.Text = ringPartsEnabled and "active" or "idle"
     if ringPartsEnabled then
         for _, part in pairs(parts) do
             if not part.Anchored then
@@ -467,20 +472,42 @@ end)
 
 DecreaseRadius.MouseButton1Click:Connect(function()
     radius = math.max(1, radius - 2)
-    RadiusDisplay.Text = "Radius: " .. radius
+    RadiusDisplay.Text = "RADIUS  " .. radius
 end)
 
 IncreaseRadius.MouseButton1Click:Connect(function()
     radius = math.min(1000, radius + 2)
-    RadiusDisplay.Text = "Radius: " .. radius
+    RadiusDisplay.Text = "RADIUS  " .. radius
 end)
 
 DecreaseSpeed.MouseButton1Click:Connect(function()
     rotationSpeed = math.max(0, rotationSpeed - 1)
-    SpeedDisplay.Text = "Speed: " .. rotationSpeed
+    SpeedDisplay.Text = "SPEED  " .. rotationSpeed
 end)
 
 IncreaseSpeed.MouseButton1Click:Connect(function()
     rotationSpeed = math.min(100, rotationSpeed + 1)
-    SpeedDisplay.Text = "Speed: " .. rotationSpeed
+    SpeedDisplay.Text = "SPEED  " .. rotationSpeed
+end)
+
+DecreaseStrength.MouseButton1Click:Connect(function()
+    attractionStrength = math.max(50, attractionStrength - 100)
+    StrengthDisplay.Text = "POWER  " .. attractionStrength
+end)
+
+IncreaseStrength.MouseButton1Click:Connect(function()
+    attractionStrength = math.min(10000, attractionStrength + 100)
+    StrengthDisplay.Text = "POWER  " .. attractionStrength
+end)
+
+CloseScript.MouseButton1Click:Connect(function()
+    ringPartsEnabled = false
+    restoreAllNoclip()
+    restoreFloat(currentHumanoid)
+    if tornadoConn then tornadoConn:Disconnect() end
+    if addedConn then addedConn:Disconnect() end
+    if removedConn then removedConn:Disconnect() end
+    if sitConn then sitConn:Disconnect() end
+    if charConn then charConn:Disconnect() end
+    ScreenGui:Destroy()
 end)
