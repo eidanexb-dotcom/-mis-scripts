@@ -1,337 +1,293 @@
+--[[
+    ✴ TORNADO CLEAN
+    Base: Super Ring Parts V4 (lukas) - limpio
+    Style: CLAUDEX
+]]--
+
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
-local Workspace = game:GetService("Workspace")
-
 local LocalPlayer = Players.LocalPlayer
 
--- Network ownership boost (solo SimulationRadius)
-if not getgenv().TornadoNetwork then
-    getgenv().TornadoNetwork = true
-    LocalPlayer.ReplicationFocus = workspace
-    RunService.Heartbeat:Connect(function()
-        pcall(function()
-            sethiddenproperty(LocalPlayer, "SimulationRadius", math.huge)
-        end)
-    end)
-end
+-- ============ CACHE ============
+local mrand, mfloor = math.random, math.floor
+local schar = string.char
+local tconcat = table.concat
+local C3_BG       = Color3.fromRGB(20, 20, 20)
+local C3_BG2      = Color3.fromRGB(30, 30, 30)
+local C3_BG3      = Color3.fromRGB(40, 40, 40)
+local C3_TEXT     = Color3.fromRGB(255, 255, 255)
+local C3_DIM      = Color3.fromRGB(140, 160, 200)
+local C3_ACCENT   = Color3.fromRGB(0, 200, 255)
+local C3_ON       = Color3.fromRGB(0, 255, 100)
+local C3_OFF      = Color3.fromRGB(255, 80, 80)
+local C3_DANGER   = Color3.fromRGB(255, 50, 50)
+local C3_DANGERBG = Color3.fromRGB(60, 0, 0)
 
--- GUI [STORM THEME]
-local COLORS = {
-    bg        = Color3.fromRGB(18, 22, 35),
-    panel     = Color3.fromRGB(28, 34, 50),
-    accent    = Color3.fromRGB(0, 200, 255),
-    accentDim = Color3.fromRGB(0, 120, 180),
-    active    = Color3.fromRGB(120, 255, 100),
-    danger    = Color3.fromRGB(255, 70, 90),
-    text      = Color3.fromRGB(230, 240, 255),
-    textDim   = Color3.fromRGB(140, 160, 200),
-}
-
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "SuperRingPartsGUI"
-ScreenGui.ResetOnSpawn = false
-ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
-
-local MainFrame = Instance.new("Frame")
-MainFrame.Size = UDim2.new(0, 240, 0, 310)
-MainFrame.Position = UDim2.new(0.5, -120, 0.5, -155)
-MainFrame.BackgroundColor3 = COLORS.bg
-MainFrame.BorderSizePixel = 0
-MainFrame.Parent = ScreenGui
-
-local mainCorner = Instance.new("UICorner")
-mainCorner.CornerRadius = UDim.new(0, 12)
-mainCorner.Parent = MainFrame
-
-local mainStroke = Instance.new("UIStroke")
-mainStroke.Color = COLORS.accent
-mainStroke.Thickness = 1.5
-mainStroke.Transparency = 0.3
-mainStroke.Parent = MainFrame
-
--- Title bar
-local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(1, -16, 0, 42)
-Title.Position = UDim2.new(0, 8, 0, 6)
-Title.Text = "⚡ TORNADO"
-Title.TextXAlignment = Enum.TextXAlignment.Left
-Title.TextColor3 = COLORS.text
-Title.BackgroundColor3 = COLORS.panel
-Title.Font = Enum.Font.GothamBold
-Title.TextSize = 18
-Title.Parent = MainFrame
-
-local titleCorner = Instance.new("UICorner")
-titleCorner.CornerRadius = UDim.new(0, 8)
-titleCorner.Parent = Title
-
-local titlePad = Instance.new("UIPadding")
-titlePad.PaddingLeft = UDim.new(0, 14)
-titlePad.Parent = Title
-
-local titleGradient = Instance.new("UIGradient")
-titleGradient.Color = ColorSequence.new{
-    ColorSequenceKeypoint.new(0, COLORS.accent),
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(180, 100, 255)),
-}
-titleGradient.Parent = Title
-
-local function makeButton(text, posX, posY, sizeX, color)
-    local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(sizeX, 0, 0, 32)
-    btn.Position = UDim2.new(posX, 0, 0, posY)
-    btn.Text = text
-    btn.AutoButtonColor = false
-    btn.BackgroundColor3 = color or COLORS.panel
-    btn.TextColor3 = COLORS.text
-    btn.Font = Enum.Font.GothamMedium
-    btn.TextSize = 14
-    btn.Parent = MainFrame
-
-    local c = Instance.new("UICorner")
-    c.CornerRadius = UDim.new(0, 8)
-    c.Parent = btn
-
-    local s = Instance.new("UIStroke")
-    s.Color = COLORS.accentDim
-    s.Thickness = 1
-    s.Transparency = 0.5
-    s.Parent = btn
-
-    btn.MouseEnter:Connect(function()
-        s.Transparency = 0
-    end)
-    btn.MouseLeave:Connect(function()
-        s.Transparency = 0.5
-    end)
-    return btn
-end
-
-local function makeLabel(text, posX, posY, sizeX)
-    local lbl = Instance.new("TextLabel")
-    lbl.Size = UDim2.new(sizeX, 0, 0, 32)
-    lbl.Position = UDim2.new(posX, 0, 0, posY)
-    lbl.Text = text
-    lbl.BackgroundColor3 = COLORS.bg
-    lbl.TextColor3 = COLORS.accent
-    lbl.Font = Enum.Font.GothamBold
-    lbl.TextSize = 14
-    lbl.Parent = MainFrame
-
-    local c = Instance.new("UICorner")
-    c.CornerRadius = UDim.new(0, 8)
-    c.Parent = lbl
-
-    local s = Instance.new("UIStroke")
-    s.Color = COLORS.accentDim
-    s.Thickness = 1
-    s.Transparency = 0.6
-    s.Parent = lbl
-    return lbl
-end
-
-local ToggleButton = makeButton("◯  RING PARTS  OFF", 0.06, 60, 0.88)
-
-local DecreaseRadius = makeButton("−", 0.06, 105, 0.17)
-local RadiusDisplay = makeLabel("RADIUS  50", 0.25, 105, 0.5)
-local IncreaseRadius = makeButton("+", 0.77, 105, 0.17)
-
-local DecreaseSpeed = makeButton("−", 0.06, 145, 0.17)
-local SpeedDisplay = makeLabel("SPEED  1", 0.25, 145, 0.5)
-local IncreaseSpeed = makeButton("+", 0.77, 145, 0.17)
-
-local DecreaseStrength = makeButton("−", 0.06, 185, 0.17)
-local StrengthDisplay = makeLabel("POWER  1000", 0.25, 185, 0.5)
-local IncreaseStrength = makeButton("+", 0.77, 185, 0.17)
-
-local CloseScript = makeButton("✕  DESTROY", 0.06, 235, 0.88, COLORS.panel)
-CloseScript.TextColor3 = COLORS.danger
-
--- Footer status dot
-local StatusDot = Instance.new("Frame")
-StatusDot.Size = UDim2.new(0, 8, 0, 8)
-StatusDot.Position = UDim2.new(0, 12, 1, -18)
-StatusDot.BackgroundColor3 = COLORS.danger
-StatusDot.BorderSizePixel = 0
-StatusDot.Parent = MainFrame
-local dotCorner = Instance.new("UICorner")
-dotCorner.CornerRadius = UDim.new(1, 0)
-dotCorner.Parent = StatusDot
-
-local StatusText = Instance.new("TextLabel")
-StatusText.Size = UDim2.new(1, -28, 0, 14)
-StatusText.Position = UDim2.new(0, 26, 1, -22)
-StatusText.Text = "idle"
-StatusText.TextXAlignment = Enum.TextXAlignment.Left
-StatusText.TextColor3 = COLORS.textDim
-StatusText.BackgroundTransparency = 1
-StatusText.Font = Enum.Font.Gotham
-StatusText.TextSize = 11
-StatusText.Parent = MainFrame
-
-local MinimizeButton = Instance.new("TextButton")
-MinimizeButton.Size = UDim2.new(0, 26, 0, 26)
-MinimizeButton.Position = UDim2.new(1, -32, 0, 14)
-MinimizeButton.Text = "—"
-MinimizeButton.AutoButtonColor = false
-MinimizeButton.BackgroundColor3 = COLORS.bg
-MinimizeButton.TextColor3 = COLORS.accent
-MinimizeButton.Font = Enum.Font.GothamBold
-MinimizeButton.TextSize = 14
-MinimizeButton.Parent = MainFrame
-
-local minCorner = Instance.new("UICorner")
-minCorner.CornerRadius = UDim.new(0, 6)
-minCorner.Parent = MinimizeButton
-
-local minStroke = Instance.new("UIStroke")
-minStroke.Color = COLORS.accent
-minStroke.Thickness = 1
-minStroke.Transparency = 0.4
-minStroke.Parent = MinimizeButton
-
-local hideable = {ToggleButton, DecreaseRadius, IncreaseRadius, RadiusDisplay,
-    DecreaseSpeed, IncreaseSpeed, SpeedDisplay,
-    DecreaseStrength, IncreaseStrength, StrengthDisplay, CloseScript,
-    StatusDot, StatusText}
-
-local minimized = false
-MinimizeButton.MouseButton1Click:Connect(function()
-    minimized = not minimized
-    if minimized then
-        MainFrame:TweenSize(UDim2.new(0, 240, 0, 54), "Out", "Quad", 0.25, true)
-        MinimizeButton.Text = "+"
-        for _, el in ipairs(hideable) do el.Visible = false end
-    else
-        MainFrame:TweenSize(UDim2.new(0, 240, 0, 310), "Out", "Quad", 0.25, true)
-        MinimizeButton.Text = "—"
-        for _, el in ipairs(hideable) do el.Visible = true end
+local function _rn()
+    local t = {}
+    for i = 1, mrand(8, 14) do
+        t[i] = schar(mrand(1, 2) == 1 and mrand(65, 90) or mrand(97, 122))
     end
-end)
+    return tconcat(t)
+end
 
--- Drag
-local dragging, dragInput, dragStart, startPos
+local function _gui()
+    local p
+    if gethui then
+        p = gethui()
+    elseif syn and syn.protect_gui then
+        local g = Instance.new("ScreenGui")
+        syn.protect_gui(g)
+        g.Parent = game:GetService("CoreGui")
+        return g
+    else
+        pcall(function() p = game:GetService("CoreGui") end)
+        if not p then p = LocalPlayer:WaitForChild("PlayerGui") end
+    end
+    local g = Instance.new("ScreenGui")
+    g.Name = _rn()
+    g.ResetOnSpawn = false
+    g.Parent = p
+    return g
+end
 
-MainFrame.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        dragging = true
-        dragStart = input.Position
-        startPos = MainFrame.Position
-        input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then
-                dragging = false
+local function _stroke(parent, color, trans)
+    local s = Instance.new("UIStroke")
+    s.Color = color or C3_ACCENT
+    s.Thickness = 1
+    s.Transparency = trans or 0.5
+    s.Parent = parent
+    return s
+end
+
+local function _corner(parent, r)
+    local c = Instance.new("UICorner")
+    c.CornerRadius = UDim.new(0, r or 6)
+    c.Parent = parent
+    return c
+end
+
+-- ============ NETWORK OWNERSHIP ============
+if not getgenv().Network then
+    getgenv().Network = {
+        BaseParts = {},
+        Velocity = Vector3.new(14.46262424, 14.46262424, 14.46262424)
+    }
+    Network.RetainPart = function(Part)
+        if typeof(Part) == "Instance" and Part:IsA("BasePart") and Part:IsDescendantOf(workspace) then
+            table.insert(Network.BaseParts, Part)
+            Part.CustomPhysicalProperties = PhysicalProperties.new(0, 0, 0, 0, 0)
+            Part.CanCollide = false
+        end
+    end
+    local function EnablePartControl()
+        LocalPlayer.ReplicationFocus = workspace
+        RunService.Heartbeat:Connect(function()
+            sethiddenproperty(LocalPlayer, "SimulationRadius", math.huge)
+            for _, Part in pairs(Network.BaseParts) do
+                if Part:IsDescendantOf(workspace) then
+                    Part.Velocity = Network.Velocity
+                end
             end
         end)
     end
-end)
+    EnablePartControl()
+end
 
-MainFrame.InputChanged:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-        dragInput = input
-    end
-end)
-
-UserInputService.InputChanged:Connect(function(input)
-    if input == dragInput and dragging then
-        local delta = input.Position - dragStart
-        MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-    end
-end)
-
--- Tornado state
+-- ============ STATE ============
 local radius = 50
 local height = 100
 local rotationSpeed = 1
 local attractionStrength = 1000
 local ringPartsEnabled = false
 
-local noclippedParts = {}
-local floorExcluded = {}
-local FLOOR_STICKY_SECONDS = 3
+-- ============ GUI ============
+local _sg = _gui()
 
-local function getFloorPart()
-    local char = LocalPlayer.Character
-    if not char then return nil end
-    local hrp = char:FindFirstChild("HumanoidRootPart")
-    if not hrp then return nil end
-    local params = RaycastParams.new()
-    params.FilterDescendantsInstances = {char}
-    params.FilterType = Enum.RaycastFilterType.Exclude
-    local result = workspace:Raycast(hrp.Position, Vector3.new(0, -30, 0), params)
-    if result then return result.Instance end
-    return nil
+-- Main floating button (TOR)
+local _tb = Instance.new("TextButton")
+_tb.Size = UDim2.new(0, 40, 0, 40)
+_tb.Position = UDim2.new(0, 10, 0.5, -20)
+_tb.BackgroundColor3 = C3_BG2
+_tb.BackgroundTransparency = 0.3
+_tb.TextColor3 = C3_ACCENT
+_tb.Font = Enum.Font.GothamBold
+_tb.TextSize = 16
+_tb.Text = "TOR"
+_tb.AutoButtonColor = false
+_tb.Name = _rn()
+_tb.Parent = _sg
+_corner(_tb, 8)
+_stroke(_tb, C3_ACCENT, 0.5)
+
+-- Toggle (state) button below TOR
+local _stb = Instance.new("TextButton")
+_stb.Size = UDim2.new(0, 40, 0, 25)
+_stb.Position = UDim2.new(0, 10, 0.5, 25)
+_stb.BackgroundColor3 = C3_BG2
+_stb.BackgroundTransparency = 0.3
+_stb.TextColor3 = C3_OFF
+_stb.Font = Enum.Font.GothamBold
+_stb.TextSize = 9
+_stb.Text = "OFF"
+_stb.AutoButtonColor = false
+_stb.Name = _rn()
+_stb.Parent = _sg
+_corner(_stb, 6)
+local _stbStroke = _stroke(_stb, C3_OFF, 0.5)
+
+-- RST button
+local _rst = Instance.new("TextButton")
+_rst.Size = UDim2.new(0, 40, 0, 25)
+_rst.Position = UDim2.new(0, 10, 0.5, 55)
+_rst.BackgroundColor3 = C3_DANGERBG
+_rst.BackgroundTransparency = 0.3
+_rst.TextColor3 = C3_DANGER
+_rst.Font = Enum.Font.GothamBold
+_rst.TextSize = 9
+_rst.Text = "RST"
+_rst.AutoButtonColor = false
+_rst.Name = _rn()
+_rst.Parent = _sg
+_corner(_rst, 6)
+_stroke(_rst, C3_DANGER, 0.4)
+
+-- Settings panel (slides out)
+local _panel = Instance.new("Frame")
+_panel.Size = UDim2.new(0, 180, 0, 170)
+_panel.Position = UDim2.new(0, 55, 0.5, -85)
+_panel.BackgroundColor3 = C3_BG
+_panel.BackgroundTransparency = 0.15
+_panel.BorderSizePixel = 0
+_panel.Visible = false
+_panel.Name = _rn()
+_panel.Parent = _sg
+_corner(_panel, 8)
+_stroke(_panel, C3_ACCENT, 0.4)
+
+local _pl = Instance.new("UIListLayout")
+_pl.Padding = UDim.new(0, 4)
+_pl.SortOrder = Enum.SortOrder.LayoutOrder
+_pl.Parent = _panel
+
+local _pp = Instance.new("UIPadding")
+_pp.PaddingTop = UDim.new(0, 6)
+_pp.PaddingLeft = UDim.new(0, 6)
+_pp.PaddingRight = UDim.new(0, 6)
+_pp.Parent = _panel
+
+local function _row(label, valueText, order)
+    local f = Instance.new("Frame")
+    f.Size = UDim2.new(1, 0, 0, 28)
+    f.BackgroundTransparency = 1
+    f.LayoutOrder = order
+    f.Name = _rn()
+    f.Parent = _panel
+
+    local minus = Instance.new("TextButton")
+    minus.Size = UDim2.new(0, 26, 1, 0)
+    minus.Position = UDim2.new(0, 0, 0, 0)
+    minus.BackgroundColor3 = C3_BG3
+    minus.BackgroundTransparency = 0.3
+    minus.TextColor3 = C3_ACCENT
+    minus.Font = Enum.Font.GothamBold
+    minus.TextSize = 14
+    minus.Text = "−"
+    minus.AutoButtonColor = false
+    minus.Name = _rn()
+    minus.Parent = f
+    _corner(minus, 4)
+    _stroke(minus, C3_ACCENT, 0.6)
+
+    local val = Instance.new("TextLabel")
+    val.Size = UDim2.new(1, -56, 1, 0)
+    val.Position = UDim2.new(0, 28, 0, 0)
+    val.BackgroundColor3 = C3_BG2
+    val.BackgroundTransparency = 0.3
+    val.TextColor3 = C3_ACCENT
+    val.Font = Enum.Font.GothamBold
+    val.TextSize = 11
+    val.Text = label .. "  " .. valueText
+    val.Name = _rn()
+    val.Parent = f
+    _corner(val, 4)
+    _stroke(val, C3_ACCENT, 0.6)
+
+    local plus = Instance.new("TextButton")
+    plus.Size = UDim2.new(0, 26, 1, 0)
+    plus.Position = UDim2.new(1, -26, 0, 0)
+    plus.BackgroundColor3 = C3_BG3
+    plus.BackgroundTransparency = 0.3
+    plus.TextColor3 = C3_ACCENT
+    plus.Font = Enum.Font.GothamBold
+    plus.TextSize = 14
+    plus.Text = "+"
+    plus.AutoButtonColor = false
+    plus.Name = _rn()
+    plus.Parent = f
+    _corner(plus, 4)
+    _stroke(plus, C3_ACCENT, 0.6)
+
+    return minus, val, plus
 end
 
-local function getExclusionRoot(part)
-    local node = part
-    while node and node.Parent and node.Parent ~= workspace do
-        node = node.Parent
-    end
-    return node or part
-end
+local _rMinus, _rVal, _rPlus = _row("RAD", tostring(radius), 1)
+local _sMinus, _sVal, _sPlus = _row("SPD", tostring(rotationSpeed), 2)
+local _pMinus, _pVal, _pPlus = _row("PWR", tostring(attractionStrength), 3)
 
-local function markFloor(instance)
-    floorExcluded[instance] = os.clock() + FLOOR_STICKY_SECONDS
-    if noclippedParts[instance] ~= nil and instance:IsA("BasePart") then
-        instance.CanCollide = noclippedParts[instance]
-        noclippedParts[instance] = nil
-    end
-end
+-- Footer status
+local _foot = Instance.new("Frame")
+_foot.Size = UDim2.new(1, 0, 0, 18)
+_foot.BackgroundTransparency = 1
+_foot.LayoutOrder = 99
+_foot.Name = _rn()
+_foot.Parent = _panel
 
-local function cleanupFloor()
-    local now = os.clock()
-    for inst, expiry in pairs(floorExcluded) do
-        if expiry < now or not inst.Parent then
-            floorExcluded[inst] = nil
+local _dot = Instance.new("Frame")
+_dot.Size = UDim2.new(0, 8, 0, 8)
+_dot.Position = UDim2.new(0, 4, 0.5, -4)
+_dot.BackgroundColor3 = C3_OFF
+_dot.BorderSizePixel = 0
+_dot.Name = _rn()
+_dot.Parent = _foot
+_corner(_dot, 999)
+
+local _stat = Instance.new("TextLabel")
+_stat.Size = UDim2.new(1, -20, 1, 0)
+_stat.Position = UDim2.new(0, 18, 0, 0)
+_stat.BackgroundTransparency = 1
+_stat.TextColor3 = C3_DIM
+_stat.Font = Enum.Font.Gotham
+_stat.TextSize = 10
+_stat.TextXAlignment = Enum.TextXAlignment.Left
+_stat.Text = "idle"
+_stat.Name = _rn()
+_stat.Parent = _foot
+
+-- ============ TOGGLE GUI VISIBILITY ============
+_tb.MouseButton1Click:Connect(function()
+    _panel.Visible = not _panel.Visible
+end)
+
+-- ============ TORNADO LOGIC ============
+local function RetainPart(Part)
+    if Part:IsA("BasePart") and not Part.Anchored and Part:IsDescendantOf(workspace) then
+        if Part.Parent == LocalPlayer.Character or Part:IsDescendantOf(LocalPlayer.Character) then
+            return false
         end
+        Part.CustomPhysicalProperties = PhysicalProperties.new(0, 0, 0, 0, 0)
+        Part.CanCollide = false
+        return true
     end
-end
-
-local function isFloorExcluded(part)
-    if floorExcluded[part] then return true end
-    local root = getExclusionRoot(part)
-    return floorExcluded[root] ~= nil
-end
-
-local function applyNoclip(part)
-    if part:IsA("BasePart") and not part.Anchored and part:IsDescendantOf(workspace) then
-        if part.Parent == LocalPlayer.Character or part:IsDescendantOf(LocalPlayer.Character) then
-            return
-        end
-        if noclippedParts[part] == nil then
-            noclippedParts[part] = part.CanCollide
-        end
-        part.CanCollide = false
-    end
-end
-
-local function restoreAllNoclip()
-    for part, original in pairs(noclippedParts) do
-        if part and part.Parent then
-            part.CanCollide = original
-        end
-    end
-    noclippedParts = {}
-end
-
-local function isTrackable(Part)
-    if not Part:IsA("BasePart") then return false end
-    if not Part:IsDescendantOf(workspace) then return false end
-    if Part.Parent == LocalPlayer.Character or Part:IsDescendantOf(LocalPlayer.Character) then
-        return false
-    end
-    return true
+    return false
 end
 
 local parts = {}
 local function addPart(part)
-    if isTrackable(part) then
+    if RetainPart(part) then
         if not table.find(parts, part) then
             table.insert(parts, part)
-        end
-        if ringPartsEnabled and not part.Anchored then
-            applyNoclip(part)
         end
     end
 end
@@ -341,93 +297,25 @@ local function removePart(part)
     if index then
         table.remove(parts, index)
     end
-    if noclippedParts[part] ~= nil then
-        noclippedParts[part] = nil
-    end
 end
 
 for _, part in pairs(workspace:GetDescendants()) do
     addPart(part)
 end
 
-local addedConn = workspace.DescendantAdded:Connect(addPart)
-local removedConn = workspace.DescendantRemoving:Connect(removePart)
+workspace.DescendantAdded:Connect(addPart)
+workspace.DescendantRemoving:Connect(removePart)
 
--- Block sit + slight float
-local FLOAT_OFFSET = 0.3
-local originalHipHeight = nil
-local currentHumanoid = nil
-local sitConn = nil
-
-local function applyFloat(humanoid)
-    if not humanoid then return end
-    if originalHipHeight == nil then
-        originalHipHeight = humanoid.HipHeight
-    end
-    humanoid.HipHeight = originalHipHeight + FLOAT_OFFSET
-end
-
-local function restoreFloat(humanoid)
-    if humanoid and originalHipHeight ~= nil then
-        humanoid.HipHeight = originalHipHeight
-    end
-end
-
-local function hookHumanoid(char)
-    local humanoid = char:FindFirstChildOfClass("Humanoid") or char:WaitForChild("Humanoid", 5)
-    if not humanoid then return end
-    currentHumanoid = humanoid
-    originalHipHeight = humanoid.HipHeight
-    if ringPartsEnabled then
-        pcall(applyFloat, humanoid)
-    end
-    if sitConn then sitConn:Disconnect() end
-    sitConn = humanoid:GetPropertyChangedSignal("Sit"):Connect(function()
-        pcall(function()
-            if ringPartsEnabled and humanoid.Sit then
-                humanoid.Sit = false
-                humanoid.SeatPart = nil
-            end
-        end)
-    end)
-end
-
-if LocalPlayer.Character then
-    hookHumanoid(LocalPlayer.Character)
-end
-local charConn = LocalPlayer.CharacterAdded:Connect(function(char)
-    originalHipHeight = nil
-    hookHumanoid(char)
-end)
-
--- Tornado heartbeat (LOGICA INTACTA)
-local tornadoConn
-tornadoConn = RunService.Heartbeat:Connect(function()
+RunService.Heartbeat:Connect(function()
     if not ringPartsEnabled then return end
 
-    pcall(function()
-        cleanupFloor()
-        local floorPart = getFloorPart()
-        if floorPart then
-            markFloor(floorPart)
-            markFloor(getExclusionRoot(floorPart))
-        end
-    end)
-
     local humanoidRootPart = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-    if not humanoidRootPart then return end
-
-    local tornadoCenter = humanoidRootPart.Position
-    for _, part in pairs(parts) do
-        pcall(function()
-            if part.Parent and not part.Anchored and not isFloorExcluded(part) then
-                if noclippedParts[part] == nil then
-                    applyNoclip(part)
-                end
+    if humanoidRootPart then
+        local tornadoCenter = humanoidRootPart.Position
+        for _, part in pairs(parts) do
+            if part.Parent and not part.Anchored then
                 local pos = part.Position
-                local flatDelta = Vector3.new(pos.X - tornadoCenter.X, 0, pos.Z - tornadoCenter.Z)
-                local distance = flatDelta.Magnitude
-                if distance < 0.01 then return end
+                local distance = (Vector3.new(pos.X, tornadoCenter.Y, pos.Z) - tornadoCenter).Magnitude
                 local angle = math.atan2(pos.Z - tornadoCenter.Z, pos.X - tornadoCenter.X)
                 local newAngle = angle + math.rad(rotationSpeed)
                 local targetPos = Vector3.new(
@@ -435,79 +323,52 @@ tornadoConn = RunService.Heartbeat:Connect(function()
                     tornadoCenter.Y + (height * (math.abs(math.sin((pos.Y - tornadoCenter.Y) / height)))),
                     tornadoCenter.Z + math.sin(newAngle) * math.min(radius, distance)
                 )
-                local delta = targetPos - part.Position
-                if delta.Magnitude < 0.01 then return end
-                part.Velocity = delta.Unit * attractionStrength
+                local directionToTarget = (targetPos - part.Position).unit
+                part.Velocity = directionToTarget * attractionStrength
             end
-        end)
+        end
     end
 end)
 
-ToggleButton.MouseButton1Click:Connect(function()
+-- ============ BUTTON CALLBACKS ============
+_stb.MouseButton1Click:Connect(function()
     ringPartsEnabled = not ringPartsEnabled
-    ToggleButton.Text = ringPartsEnabled and "●  RING PARTS  ON" or "◯  RING PARTS  OFF"
-    ToggleButton.BackgroundColor3 = ringPartsEnabled and COLORS.active or COLORS.panel
-    ToggleButton.TextColor3 = ringPartsEnabled and COLORS.bg or COLORS.text
-    StatusDot.BackgroundColor3 = ringPartsEnabled and COLORS.active or COLORS.danger
-    StatusText.Text = ringPartsEnabled and "active" or "idle"
-    if ringPartsEnabled then
-        for _, part in pairs(parts) do
-            if not part.Anchored then
-                applyNoclip(part)
-            end
-        end
-        local humanoid = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-        if humanoid then
-            if humanoid.Sit then
-                humanoid.Sit = false
-                humanoid.SeatPart = nil
-            end
-            applyFloat(humanoid)
-        end
-    else
-        restoreAllNoclip()
-        restoreFloat(currentHumanoid)
-    end
+    _stb.Text = ringPartsEnabled and "ON" or "OFF"
+    _stb.TextColor3 = ringPartsEnabled and C3_ON or C3_OFF
+    _stbStroke.Color = ringPartsEnabled and C3_ON or C3_OFF
+    _dot.BackgroundColor3 = ringPartsEnabled and C3_ON or C3_OFF
+    _stat.Text = ringPartsEnabled and "active" or "idle"
 end)
 
-DecreaseRadius.MouseButton1Click:Connect(function()
+_rMinus.MouseButton1Click:Connect(function()
     radius = math.max(1, radius - 2)
-    RadiusDisplay.Text = "RADIUS  " .. radius
+    _rVal.Text = "RAD  " .. radius
 end)
-
-IncreaseRadius.MouseButton1Click:Connect(function()
+_rPlus.MouseButton1Click:Connect(function()
     radius = math.min(1000, radius + 2)
-    RadiusDisplay.Text = "RADIUS  " .. radius
+    _rVal.Text = "RAD  " .. radius
 end)
 
-DecreaseSpeed.MouseButton1Click:Connect(function()
+_sMinus.MouseButton1Click:Connect(function()
     rotationSpeed = math.max(0, rotationSpeed - 1)
-    SpeedDisplay.Text = "SPEED  " .. rotationSpeed
+    _sVal.Text = "SPD  " .. rotationSpeed
 end)
-
-IncreaseSpeed.MouseButton1Click:Connect(function()
+_sPlus.MouseButton1Click:Connect(function()
     rotationSpeed = math.min(100, rotationSpeed + 1)
-    SpeedDisplay.Text = "SPEED  " .. rotationSpeed
+    _sVal.Text = "SPD  " .. rotationSpeed
 end)
 
-DecreaseStrength.MouseButton1Click:Connect(function()
+_pMinus.MouseButton1Click:Connect(function()
     attractionStrength = math.max(50, attractionStrength - 100)
-    StrengthDisplay.Text = "POWER  " .. attractionStrength
+    _pVal.Text = "PWR  " .. attractionStrength
 end)
-
-IncreaseStrength.MouseButton1Click:Connect(function()
+_pPlus.MouseButton1Click:Connect(function()
     attractionStrength = math.min(10000, attractionStrength + 100)
-    StrengthDisplay.Text = "POWER  " .. attractionStrength
+    _pVal.Text = "PWR  " .. attractionStrength
 end)
 
-CloseScript.MouseButton1Click:Connect(function()
+-- ============ RST (DESTROY) ============
+_rst.MouseButton1Click:Connect(function()
     ringPartsEnabled = false
-    restoreAllNoclip()
-    restoreFloat(currentHumanoid)
-    if tornadoConn then tornadoConn:Disconnect() end
-    if addedConn then addedConn:Disconnect() end
-    if removedConn then removedConn:Disconnect() end
-    if sitConn then sitConn:Disconnect() end
-    if charConn then charConn:Disconnect() end
-    ScreenGui:Destroy()
+    pcall(function() _sg:Destroy() end)
 end)
