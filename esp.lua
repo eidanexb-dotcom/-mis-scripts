@@ -1,5 +1,5 @@
 --[[
-	✴ CLAUDEX v3.13
+	✴ CLAUDEX v3.17
 	Por: Eidanex & Claude
 	ScriptBlox: scriptblox.com
 ]]--
@@ -394,6 +394,8 @@ local _espOn = true
 local _initPlayer
 local _anchorOn = false
 local _anchorOG = {}
+local _ragdoll = false
+local _ragCon
 local Lighting = game:GetService("Lighting")
 
 local _tb = Instance.new("TextButton")
@@ -433,18 +435,31 @@ _mbStr.Transparency = 0.5
 _mbStr.Parent = _mb
 
 local _mdf = Instance.new("Frame")
-_mdf.Size = UDim2.new(0, 80, 0, 158)
-_mdf.Position = UDim2.new(0, 55, 0.5, 25)
+_mdf.Size = UDim2.new(0, 140, 0, 200)
+_mdf.Position = UDim2.new(0.5, -70, 0.5, -100)
 _mdf.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 _mdf.BackgroundTransparency = 0.15
 _mdf.BorderSizePixel = 0
 _mdf.Visible = false
 _mdf.Name = _rn()
 _mdf.Parent = _sg
-Instance.new("UICorner", _mdf).CornerRadius = UDim.new(0, 6)
+Instance.new("UICorner", _mdf).CornerRadius = UDim.new(0, 8)
+local _mdfStr = Instance.new("UIStroke")
+_mdfStr.Color = C3_ON
+_mdfStr.Thickness = 1
+_mdfStr.Transparency = 0.5
+_mdfStr.Parent = _mdf
+local _mdfPad = Instance.new("UIPadding")
+_mdfPad.PaddingTop = UDim.new(0, 6)
+_mdfPad.PaddingBottom = UDim.new(0, 6)
+_mdfPad.PaddingLeft = UDim.new(0, 6)
+_mdfPad.PaddingRight = UDim.new(0, 6)
+_mdfPad.Parent = _mdf
 
 local _mdl = Instance.new("UIListLayout")
-_mdl.Padding = UDim.new(0, 2)
+_mdl.Padding = UDim.new(0, 4)
+_mdl.HorizontalAlignment = Enum.HorizontalAlignment.Center
+_mdl.SortOrder = Enum.SortOrder.LayoutOrder
 _mdl.Parent = _mdf
 
 local _mNames = {"INST", "SUAVE", "SOMBRERO", "COSTAL", "VALIENTE", "VISTA"}
@@ -475,16 +490,19 @@ end
 
 for i, name in ipairs(_mNames) do
 	local btn = Instance.new("TextButton")
-	btn.Size = UDim2.new(1, 0, 0, 24)
+	btn.Size = UDim2.new(1, 0, 0, 28)
+	btn.LayoutOrder = i
 	btn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 	btn.BackgroundTransparency = 0.3
 	btn.TextColor3 = _mColors[i]
 	btn.Font = Enum.Font.GothamBold
-	btn.TextSize = 9
+	btn.TextSize = 12
+	btn.TextXAlignment = Enum.TextXAlignment.Center
+	btn.TextYAlignment = Enum.TextYAlignment.Center
 	btn.Text = name
 	btn.Name = _rn()
 	btn.Parent = _mdf
-	Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
+	Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
 	btn.MouseButton1Click:Connect(function()
 		_setMode(i - 1)
 	end)
@@ -540,20 +558,21 @@ local function _doRST()
 	_jerkOn = false
 	_flyOn = false
 	_anchorOn = false
+	_ragdoll = false
 	_grav = false
 	if _mv and _tc then _tc:Disconnect(); _mv = false end
 	task.wait()
 
 	-- ═══ FASE 2: Desconectar TODAS las conexiones ═══
 	local cons = {
-		_nccon, _gravCon, _gravMoveCon, _ijCon, _atCon, _fcCon, _afkCon, _antiRagCharCon, _flyCon, _flyStateCon, _flyAnimCon,
+		_nccon, _gravCon, _gravMoveCon, _ijCon, _atCon, _fcCon, _afkCon, _antiRagCharCon, _flyCon, _flyStateCon, _flyAnimCon, _ragCon,
 	}
 	for _, c in ipairs(cons) do
 		if c then pcall(function() c:Disconnect() end) end
 	end
 	_nccon = nil; _gravCon = nil; _gravMoveCon = nil; _ijCon = nil
 	_atCon = nil; _fcCon = nil; _afkCon = nil; _antiRagCharCon = nil; _flyCon = nil
-	_flyStateCon = nil; _flyAnimCon = nil
+	_flyStateCon = nil; _flyAnimCon = nil; _ragCon = nil
 	pcall(function() _clearAntiRag() end)
 	pcall(function() RS:UnbindFromRenderStep(_jerkBindName) end)
 	task.wait()
@@ -1173,14 +1192,14 @@ local function _startJerk()
 			t = t + 0.35
 			if isR15 then
 				if rShoulder15 and rShoulder15.Parent then
-					rShoulder15.Transform = CFrame.Angles(math.rad(-5), 0, math.rad(12))
+					rShoulder15.Transform = CFrame.Angles(math.rad(65), 0, math.rad(18))
 				end
 				if rElbow15 and rElbow15.Parent then
-					rElbow15.Transform = CFrame.Angles(msin(t) * math.rad(30) - math.rad(95), 0, 0)
+					rElbow15.Transform = CFrame.Angles(math.rad(20) + msin(t) * math.rad(25), 0, 0)
 				end
 			else
 				if rShoulder6 and rShoulder6.Parent then
-					rShoulder6.Transform = CFrame.Angles(math.rad(-90) + msin(t) * math.rad(30), math.rad(-25), math.rad(10))
+					rShoulder6.Transform = CFrame.Angles(math.rad(60) + msin(t) * math.rad(25), 0, math.rad(-15))
 				end
 			end
 		end)
@@ -1588,6 +1607,73 @@ local function _toggleAntiTouch()
 end
 _atb.MouseButton1Click:Connect(_toggleAntiTouch)
 end
+
+-- RAGDOLL (como gravedad 0 pero con gravedad normal — char limp cayendo)
+local _rgb = _dbtn("RAGDOLL: OFF", 4, 2)
+
+do
+local function _applyRagdoll(on)
+	pcall(function()
+		local hum = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
+		if not hum then return end
+		if on then
+			hum.PlatformStand = true
+			hum:SetStateEnabled(Enum.HumanoidStateType.GettingUp, false)
+			hum:SetStateEnabled(Enum.HumanoidStateType.Running, false)
+			hum:SetStateEnabled(Enum.HumanoidStateType.RunningNoPhysics, false)
+			hum:SetStateEnabled(Enum.HumanoidStateType.Jumping, false)
+			hum:SetStateEnabled(Enum.HumanoidStateType.Landed, false)
+			hum:ChangeState(Enum.HumanoidStateType.Physics)
+			local anim = LP.Character:FindFirstChild("Animate")
+			if anim then anim.Disabled = true end
+			for _, tr in ipairs(hum:GetPlayingAnimationTracks()) do pcall(function() tr:AdjustSpeed(0) end) end
+		else
+			hum.PlatformStand = false
+			hum:SetStateEnabled(Enum.HumanoidStateType.GettingUp, true)
+			hum:SetStateEnabled(Enum.HumanoidStateType.Running, true)
+			hum:SetStateEnabled(Enum.HumanoidStateType.RunningNoPhysics, true)
+			hum:SetStateEnabled(Enum.HumanoidStateType.Jumping, true)
+			hum:SetStateEnabled(Enum.HumanoidStateType.Landed, true)
+			hum:ChangeState(Enum.HumanoidStateType.GettingUp)
+			local anim = LP.Character:FindFirstChild("Animate")
+			if anim then anim.Disabled = false end
+		end
+	end)
+end
+local function _toggleRagdoll()
+	_ragdoll = not _ragdoll
+	_rgb.Text = _ragdoll and "RAGDOLL: ON" or "RAGDOLL: OFF"
+	_rgb.TextColor3 = _ragdoll and C3_ON or C3_OFF
+	if _ragdoll then
+		_applyRagdoll(true)
+		_ragCon = RS.Heartbeat:Connect(function()
+			if not _ragdoll then return end
+			if _tick % 20 ~= 0 then return end
+			local hum = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
+			if hum and not hum.PlatformStand then hum.PlatformStand = true end
+		end)
+	else
+		if _ragCon then _ragCon:Disconnect(); _ragCon = nil end
+		_applyRagdoll(false)
+	end
+end
+_rgb.MouseButton1Click:Connect(_toggleRagdoll)
+end
+
+-- TORNADO (script externo via loadstring)
+local _tornBtn = _dbtn("TORNADO", 5, 2)
+local _tornBusy = false
+_tornBtn.MouseButton1Click:Connect(function()
+	if _tornBusy then return end
+	_tornBusy = true
+	_tornBtn.TextColor3 = C3_ON
+	pcall(function()
+		loadstring(game:HttpGet("https://raw.githubusercontent.com/eidanexb-dotcom/-mis-scripts/refs/heads/main/Tornado.lua?nocache=" .. tostring(tick()), true))()
+	end)
+	task.wait(0.5)
+	_tornBtn.TextColor3 = C3_OFF
+	_tornBusy = false
+end)
 
 -- X-RAY (paredes transparentes)
 _xrb = _dbtn("X-RAY: OFF", 2, 4)
