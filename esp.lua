@@ -1,5 +1,5 @@
 --[[
-	✴ CLAUDEX v3.12
+	✴ CLAUDEX v3.13
 	Por: Eidanex & Claude
 	ScriptBlox: scriptblox.com
 ]]--
@@ -75,13 +75,6 @@ do
 		local tampered = false
 		_ref.pcall(function()
 			if _ref.type(game.HttpGet) ~= "function" then tampered = true end
-		end)
-		_ref.pcall(function()
-			local d = debug
-			if d and d.getinfo then
-				local info = d.getinfo(_AT.checkIntegrity)
-				if info and info.source and info.source:find("@") then tampered = true end
-			end
 		end)
 		if tampered then return false end
 		return true
