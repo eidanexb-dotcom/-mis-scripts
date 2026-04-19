@@ -1,5 +1,5 @@
 --[[
-	✴ CLAUDEX v3.23
+	✴ CLAUDEX v3.24
 	Por: Eidanex & Claude
 	ScriptBlox: scriptblox.com
 ]]--
@@ -535,10 +535,9 @@ _rstStr.Thickness = 1
 _rstStr.Transparency = 0.4
 _rstStr.Parent = _rst
 
-local _rstBusy = false
 local function _doRST()
-	if _rstBusy then return end
-	_rstBusy = true
+	if _AT._rstBusy then return end
+	_AT._rstBusy = true
 	_gen = _gen + 1
 
 	-- ═══ FASE 1: Desactivar flags (nada nuevo se ejecuta) ═══
@@ -678,7 +677,7 @@ local function _doRST()
 	local ok = pcall(function()
 		loadstring(game:HttpGet("https://raw.githubusercontent.com/eidanexb-dotcom/-mis-scripts/refs/heads/main/esp.lua?nocache=" .. tostring(tick()) .. tostring(math.random(100000, 999999)), true))()
 	end)
-	if not ok then _rstBusy = false end
+	if not ok then _AT._rstBusy = false end
 end
 _rst.MouseButton1Click:Connect(_doRST)
 
@@ -1290,18 +1289,17 @@ _arb.MouseButton1Click:Connect(_toggleAntiRag)
 
 -- FLING (motor externo FE, igual que INVI)
 local _flb = _dbtn("FLING: OFF", 2, 2)
-local _flingBusy = false
 
 _flb.MouseButton1Click:Connect(function()
-	if _flingBusy then return end
-	_flingBusy = true
+	if _AT._flingBusy then return end
+	_AT._flingBusy = true
 	_fling = not _fling
 	_flb.Text = _fling and "FLING: ON" or "FLING: OFF"
 	_flb.TextColor3 = _fling and C3_ON or C3_OFF
 	pcall(function()
 		loadstring(game:HttpGet("https://raw.githubusercontent.com/0Ben1/fe/main/obf_rf6iQURzu1fqrytcnLBAvW34C9N55kS9g9G3CKz086rC47M6632sEd4ZZYB0AYgV.lua.txt"))()
 	end)
-	_flingBusy = false
+	_AT._flingBusy = false
 end)
 
 -- FLY (estilo LINHMC V4: ControlModule + Lerp + anti-sit + anti-animations)
@@ -2344,16 +2342,15 @@ end
 _grb.MouseButton1Click:Connect(_toggleGrav)
 
 -- INVISIBILIDAD (motor externo FE)
-local _invisBusy = false
 _toggleInvis = function()
-	if _invisBusy then return end
-	_invisBusy = true
+	if _AT._invisBusy then return end
+	_AT._invisBusy = true
 	_invis = not _invis
 	if _ivL then _ivL.TextColor3 = _invis and C3_ON or C3_OFF end
 	pcall(function()
 		loadstring(game:HttpGet("https://pastebin.com/raw/3Rnd9rHf"))()
 	end)
-	_invisBusy = false
+	_AT._invisBusy = false
 end
 
 _tinfo = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
@@ -2450,7 +2447,7 @@ task.spawn(function()
 			txt = "by eidaneddd"
 		end
 		game:GetService("StarterGui"):SetCore("SendNotification", {
-			Title = "Claudex v3.23",
+			Title = "Claudex v3.24",
 			Text = txt,
 			Duration = 7,
 		})
