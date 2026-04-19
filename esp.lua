@@ -1,5 +1,5 @@
 --[[
-	✴ CLAUDEX v3.24
+	✴ CLAUDEX v3.25
 	Por: Eidanex & Claude
 	ScriptBlox: scriptblox.com
 ]]--
@@ -367,14 +367,14 @@ local _antiRagCons = {}
 local _antiRagCharCon
 local _clearAntiRag
 local _yupiSpd = 10
-local _fpsBoost = false
+_AT._fpsBoost = false
 local _fpsOG = {}
 local _fpsDisabled = {}
 local _fpbb
-local _antiTouch = false
+_AT._antiTouch = false
 local _atCon
 local _atb
-local _xray = false
+_AT._xray = false
 local _xrayParts = {}
 local _xrb
 local _freeCam = false
@@ -544,9 +544,9 @@ local function _doRST()
 	_noclip = false
 	_bright = false
 	_slide = false
-	_fpsBoost = false
-	_antiTouch = false
-	_xray = false
+	_AT._fpsBoost = false
+	_AT._antiTouch = false
+	_AT._xray = false
 	_freeCam = false
 	_antiAfk = false
 	_infJump = false
@@ -1514,10 +1514,10 @@ end)
 _fpbb = _dbtn("FPS BOOST: OFF", 1, 4)
 
 local function _toggleFpsBoost()
-	_fpsBoost = not _fpsBoost
-	_fpbb.Text = _fpsBoost and "FPS BOOST: ON" or "FPS BOOST: OFF"
-	_fpbb.TextColor3 = _fpsBoost and C3_ON or C3_OFF
-	if _fpsBoost then
+	_AT._fpsBoost = not _AT._fpsBoost
+	_fpbb.Text = _AT._fpsBoost and "FPS BOOST: ON" or "FPS BOOST: OFF"
+	_fpbb.TextColor3 = _AT._fpsBoost and C3_ON or C3_OFF
+	if _AT._fpsBoost then
 		_fpsOG = {
 			gs = Lighting.GlobalShadows,
 			gi = Lighting.GlobalIllumination,
@@ -1581,12 +1581,12 @@ _atb = _dbtn("ANTI-TOUCH: OFF", 3, 2)
 
 do
 local function _toggleAntiTouch()
-	_antiTouch = not _antiTouch
-	_atb.Text = _antiTouch and "ANTI-TOUCH: ON" or "ANTI-TOUCH: OFF"
-	_atb.TextColor3 = _antiTouch and C3_ON or C3_OFF
-	if _antiTouch then
+	_AT._antiTouch = not _AT._antiTouch
+	_atb.Text = _AT._antiTouch and "ANTI-TOUCH: ON" or "ANTI-TOUCH: OFF"
+	_atb.TextColor3 = _AT._antiTouch and C3_ON or C3_OFF
+	if _AT._antiTouch then
 		_atCon = RS.Heartbeat:Connect(function()
-			if not _antiTouch then return end
+			if not _AT._antiTouch then return end
 			if _tick % 3 ~= 0 then return end
 			local ch = LP.Character
 			if not ch then return end
@@ -1689,10 +1689,10 @@ _xrb = _dbtn("X-RAY: OFF", 2, 4)
 
 do
 local function _toggleXray()
-	_xray = not _xray
-	_xrb.Text = _xray and "X-RAY: ON" or "X-RAY: OFF"
-	_xrb.TextColor3 = _xray and C3_ON or C3_OFF
-	if _xray then
+	_AT._xray = not _AT._xray
+	_xrb.Text = _AT._xray and "X-RAY: ON" or "X-RAY: OFF"
+	_xrb.TextColor3 = _AT._xray and C3_ON or C3_OFF
+	if _AT._xray then
 		_xrayParts = {}
 		local chars = {}
 		for _, pl in ipairs(Players:GetPlayers()) do
@@ -2447,7 +2447,7 @@ task.spawn(function()
 			txt = "by eidaneddd"
 		end
 		game:GetService("StarterGui"):SetCore("SendNotification", {
-			Title = "Claudex v3.24",
+			Title = "Claudex v3.25",
 			Text = txt,
 			Duration = 7,
 		})
