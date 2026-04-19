@@ -1,5 +1,5 @@
 --[[
-	✴ CLAUDEX v3.17
+	✴ CLAUDEX v3.18
 	Por: Eidanex & Claude
 	ScriptBlox: scriptblox.com
 ]]--
@@ -354,7 +354,7 @@ local _ncParts = {}
 local _bright, _brightOG
 local _slide
 local _grav, _gravOG, _gravCon, _gravGyro, _gravBV, _gravMoveCon
-local _ncb, _brb, _dsb, _grb
+local _ncb, _brb, _dsb, _grb, _rgb
 local _invis
 local _toggleInvis
 local _ivL
@@ -1273,6 +1273,15 @@ local function _toggleAntiRag()
 	_arb.Text = _antiRag and "ANTI-RAG: ON" or "ANTI-RAG: OFF"
 	_arb.TextColor3 = _antiRag and C3_ON or C3_OFF
 	if _antiRag then
+		if _ragdoll then
+			_ragdoll = false
+			if _rgb then _rgb.Text = "RAGDOLL: OFF"; _rgb.TextColor3 = C3_OFF end
+			if _ragCon then _ragCon:Disconnect(); _ragCon = nil end
+			pcall(function()
+				local hum = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
+				if hum then hum.PlatformStand = false end
+			end)
+		end
 		local ch = LP.Character
 		if ch then _applyAntiRag(ch:FindFirstChildOfClass("Humanoid")) end
 		_antiRagCharCon = LP.CharacterAdded:Connect(function(c)
@@ -1609,7 +1618,7 @@ _atb.MouseButton1Click:Connect(_toggleAntiTouch)
 end
 
 -- RAGDOLL (como gravedad 0 pero con gravedad normal — char limp cayendo)
-local _rgb = _dbtn("RAGDOLL: OFF", 4, 2)
+_rgb = _dbtn("RAGDOLL: OFF", 4, 2)
 
 do
 local function _applyRagdoll(on)
@@ -1645,6 +1654,7 @@ local function _toggleRagdoll()
 	_rgb.Text = _ragdoll and "RAGDOLL: ON" or "RAGDOLL: OFF"
 	_rgb.TextColor3 = _ragdoll and C3_ON or C3_OFF
 	if _ragdoll then
+		if _antiRag then _toggleAntiRag() end
 		_applyRagdoll(true)
 		_ragCon = RS.Heartbeat:Connect(function()
 			if not _ragdoll then return end
@@ -1660,8 +1670,9 @@ end
 _rgb.MouseButton1Click:Connect(_toggleRagdoll)
 end
 
--- TORNADO (script externo via loadstring)
+-- TORNADO (script externo via loadstring, boton de accion no toggle)
 local _tornBtn = _dbtn("TORNADO", 5, 2)
+_tornBtn.TextColor3 = C3_CLAUDEX
 local _tornBusy = false
 _tornBtn.MouseButton1Click:Connect(function()
 	if _tornBusy then return end
@@ -1670,8 +1681,8 @@ _tornBtn.MouseButton1Click:Connect(function()
 	pcall(function()
 		loadstring(game:HttpGet("https://raw.githubusercontent.com/eidanexb-dotcom/-mis-scripts/refs/heads/main/Tornado.lua?nocache=" .. tostring(tick()), true))()
 	end)
-	task.wait(0.5)
-	_tornBtn.TextColor3 = C3_OFF
+	task.wait(0.8)
+	_tornBtn.TextColor3 = C3_CLAUDEX
 	_tornBusy = false
 end)
 
