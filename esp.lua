@@ -1,5 +1,5 @@
 --[[
-	✴ CLAUDEX v3.21
+	✴ CLAUDEX v3.23
 	Por: Eidanex & Claude
 	ScriptBlox: scriptblox.com
 ]]--
@@ -354,7 +354,7 @@ local _ncParts = {}
 local _bright, _brightOG
 local _slide
 local _grav, _gravOG, _gravCon, _gravGyro, _gravBV, _gravMoveCon
-local _ncb, _brb, _dsb, _grb, _rgb
+local _ncb, _brb, _dsb, _grb
 local _invis
 local _toggleInvis
 local _ivL
@@ -394,8 +394,7 @@ local _espOn = true
 local _initPlayer
 local _anchorOn = false
 local _anchorOG = {}
-local _ragdoll = false
-local _ragCon
+_AT._rag = { on = false, con = nil, btn = nil, disable = nil }
 local Lighting = game:GetService("Lighting")
 
 local _tb = Instance.new("TextButton")
@@ -558,21 +557,21 @@ local function _doRST()
 	_jerkOn = false
 	_flyOn = false
 	_anchorOn = false
-	_ragdoll = false
+	_AT._rag.on = false
 	_grav = false
 	if _mv and _tc then _tc:Disconnect(); _mv = false end
 	task.wait()
 
 	-- ═══ FASE 2: Desconectar TODAS las conexiones ═══
 	local cons = {
-		_nccon, _gravCon, _gravMoveCon, _ijCon, _atCon, _fcCon, _afkCon, _antiRagCharCon, _flyCon, _flyStateCon, _flyAnimCon, _ragCon,
+		_nccon, _gravCon, _gravMoveCon, _ijCon, _atCon, _fcCon, _afkCon, _antiRagCharCon, _flyCon, _flyStateCon, _flyAnimCon, _AT._rag.con,
 	}
 	for _, c in ipairs(cons) do
 		if c then pcall(function() c:Disconnect() end) end
 	end
 	_nccon = nil; _gravCon = nil; _gravMoveCon = nil; _ijCon = nil
 	_atCon = nil; _fcCon = nil; _afkCon = nil; _antiRagCharCon = nil; _flyCon = nil
-	_flyStateCon = nil; _flyAnimCon = nil; _ragCon = nil
+	_flyStateCon = nil; _flyAnimCon = nil; _AT._rag.con = nil
 	pcall(function() _clearAntiRag() end)
 	pcall(function() RS:UnbindFromRenderStep(_jerkBindName) end)
 	task.wait()
@@ -1273,15 +1272,7 @@ local function _toggleAntiRag()
 	_arb.Text = _antiRag and "ANTI-RAG: ON" or "ANTI-RAG: OFF"
 	_arb.TextColor3 = _antiRag and C3_ON or C3_OFF
 	if _antiRag then
-		if _ragdoll then
-			_ragdoll = false
-			if _rgb then _rgb.Text = "RAGDOLL: OFF"; _rgb.TextColor3 = C3_OFF end
-			if _ragCon then _ragCon:Disconnect(); _ragCon = nil end
-			pcall(function()
-				local hum = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
-				if hum then hum.PlatformStand = false end
-			end)
-		end
+		if _AT._rag.on and _AT._rag.disable then _AT._rag.disable() end
 		local ch = LP.Character
 		if ch then _applyAntiRag(ch:FindFirstChildOfClass("Humanoid")) end
 		_antiRagCharCon = LP.CharacterAdded:Connect(function(c)
@@ -1618,56 +1609,63 @@ _atb.MouseButton1Click:Connect(_toggleAntiTouch)
 end
 
 -- RAGDOLL (como gravedad 0 pero con gravedad normal — char limp cayendo)
-_rgb = _dbtn("RAGDOLL: OFF", 4, 2)
-
 do
-local function _applyRagdoll(on)
-	pcall(function()
-		local hum = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
-		if not hum then return end
-		if on then
-			hum.PlatformStand = true
-			hum:SetStateEnabled(Enum.HumanoidStateType.GettingUp, false)
-			hum:SetStateEnabled(Enum.HumanoidStateType.Running, false)
-			hum:SetStateEnabled(Enum.HumanoidStateType.RunningNoPhysics, false)
-			hum:SetStateEnabled(Enum.HumanoidStateType.Jumping, false)
-			hum:SetStateEnabled(Enum.HumanoidStateType.Landed, false)
-			hum:ChangeState(Enum.HumanoidStateType.Physics)
-			local anim = LP.Character:FindFirstChild("Animate")
-			if anim then anim.Disabled = true end
-			for _, tr in ipairs(hum:GetPlayingAnimationTracks()) do pcall(function() tr:AdjustSpeed(0) end) end
-		else
-			hum.PlatformStand = false
-			hum:SetStateEnabled(Enum.HumanoidStateType.GettingUp, true)
-			hum:SetStateEnabled(Enum.HumanoidStateType.Running, true)
-			hum:SetStateEnabled(Enum.HumanoidStateType.RunningNoPhysics, true)
-			hum:SetStateEnabled(Enum.HumanoidStateType.Jumping, true)
-			hum:SetStateEnabled(Enum.HumanoidStateType.Landed, true)
-			hum:ChangeState(Enum.HumanoidStateType.GettingUp)
-			local anim = LP.Character:FindFirstChild("Animate")
-			if anim then anim.Disabled = false end
-		end
-	end)
-end
-local function _toggleRagdoll()
-	_ragdoll = not _ragdoll
-	_rgb.Text = _ragdoll and "RAGDOLL: ON" or "RAGDOLL: OFF"
-	_rgb.TextColor3 = _ragdoll and C3_ON or C3_OFF
-	if _ragdoll then
-		if _antiRag then _toggleAntiRag() end
-		_applyRagdoll(true)
-		_ragCon = RS.Heartbeat:Connect(function()
-			if not _ragdoll then return end
-			if _tick % 20 ~= 0 then return end
+	local _rgb = _dbtn("RAGDOLL: OFF", 4, 2)
+	_AT._rag.btn = _rgb
+	local function _applyRagdoll(on)
+		pcall(function()
 			local hum = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
-			if hum and not hum.PlatformStand then hum.PlatformStand = true end
+			if not hum then return end
+			if on then
+				hum.PlatformStand = true
+				hum:SetStateEnabled(Enum.HumanoidStateType.GettingUp, false)
+				hum:SetStateEnabled(Enum.HumanoidStateType.Running, false)
+				hum:SetStateEnabled(Enum.HumanoidStateType.RunningNoPhysics, false)
+				hum:SetStateEnabled(Enum.HumanoidStateType.Jumping, false)
+				hum:SetStateEnabled(Enum.HumanoidStateType.Landed, false)
+				hum:ChangeState(Enum.HumanoidStateType.Physics)
+				local anim = LP.Character:FindFirstChild("Animate")
+				if anim then anim.Disabled = true end
+				for _, tr in ipairs(hum:GetPlayingAnimationTracks()) do pcall(function() tr:AdjustSpeed(0) end) end
+			else
+				hum.PlatformStand = false
+				hum:SetStateEnabled(Enum.HumanoidStateType.GettingUp, true)
+				hum:SetStateEnabled(Enum.HumanoidStateType.Running, true)
+				hum:SetStateEnabled(Enum.HumanoidStateType.RunningNoPhysics, true)
+				hum:SetStateEnabled(Enum.HumanoidStateType.Jumping, true)
+				hum:SetStateEnabled(Enum.HumanoidStateType.Landed, true)
+				hum:ChangeState(Enum.HumanoidStateType.GettingUp)
+				local anim = LP.Character:FindFirstChild("Animate")
+				if anim then anim.Disabled = false end
+			end
 		end)
-	else
-		if _ragCon then _ragCon:Disconnect(); _ragCon = nil end
+	end
+	_AT._rag.disable = function()
+		_AT._rag.on = false
+		_rgb.Text = "RAGDOLL: OFF"
+		_rgb.TextColor3 = C3_OFF
+		if _AT._rag.con then _AT._rag.con:Disconnect(); _AT._rag.con = nil end
 		_applyRagdoll(false)
 	end
-end
-_rgb.MouseButton1Click:Connect(_toggleRagdoll)
+	local function _toggleRagdoll()
+		_AT._rag.on = not _AT._rag.on
+		_rgb.Text = _AT._rag.on and "RAGDOLL: ON" or "RAGDOLL: OFF"
+		_rgb.TextColor3 = _AT._rag.on and C3_ON or C3_OFF
+		if _AT._rag.on then
+			if _antiRag then _toggleAntiRag() end
+			_applyRagdoll(true)
+			_AT._rag.con = RS.Heartbeat:Connect(function()
+				if not _AT._rag.on then return end
+				if _tick % 20 ~= 0 then return end
+				local hum = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
+				if hum and not hum.PlatformStand then hum.PlatformStand = true end
+			end)
+		else
+			if _AT._rag.con then _AT._rag.con:Disconnect(); _AT._rag.con = nil end
+			_applyRagdoll(false)
+		end
+	end
+	_rgb.MouseButton1Click:Connect(_toggleRagdoll)
 end
 
 -- TORNADO (script externo via loadstring, boton de accion no toggle)
@@ -2452,7 +2450,7 @@ task.spawn(function()
 			txt = "by eidaneddd"
 		end
 		game:GetService("StarterGui"):SetCore("SendNotification", {
-			Title = "Claudex v3.21",
+			Title = "Claudex v3.23",
 			Text = txt,
 			Duration = 7,
 		})
