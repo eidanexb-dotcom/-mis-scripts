@@ -1,5 +1,5 @@
 --[[
-	✴ CLAUDEX v3.09
+	✴ CLAUDEX v3.10
 	Por: Eidanex & Claude
 	ScriptBlox: scriptblox.com
 ]]--
@@ -707,16 +707,18 @@ local function _rl()
 			btn.Parent = _lf
 			Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
 
-			local ok, img = pcall(function()
-				return Players:GetUserThumbnailAsync(p.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size48x48)
-			end)
 			local av = Instance.new("ImageLabel")
 			av.Size = UDim2.new(0, 30, 0, 30)
 			av.Position = UDim2.new(0, 5, 0.5, -15)
 			av.BackgroundTransparency = 1
-			if ok then av.Image = img end
 			av.Parent = btn
 			Instance.new("UICorner", av).CornerRadius = UDim.new(1, 0)
+			task.spawn(function()
+				local ok, img = pcall(function()
+					return Players:GetUserThumbnailAsync(p.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size48x48)
+				end)
+				if ok and av and av.Parent then av.Image = img end
+			end)
 
 			local pad = Instance.new("UIPadding")
 			pad.PaddingLeft = UDim.new(0, 45)
@@ -2262,7 +2264,6 @@ end)
 
 -- ============ INIT ============
 _AT._obj = _obj
-_AT.startWatchdog(5)
 _initPlayer = function(p)
 	if _pcons[p] then
 		for _, c in pairs(_pcons[p]) do pcall(function() c:Disconnect() end) end
@@ -2270,7 +2271,13 @@ _initPlayer = function(p)
 	end
 	_make(p); _td(p)
 end
-for _, p in ipairs(Players:GetPlayers()) do _initPlayer(p) end
 Players.PlayerAdded:Connect(function(p) _initPlayer(p) end)
 Players.PlayerRemoving:Connect(_del)
-_md()
+task.spawn(function()
+	for _, p in ipairs(Players:GetPlayers()) do
+		_initPlayer(p)
+		task.wait()
+	end
+	_md()
+end)
+task.delay(2, function() _AT.startWatchdog(5) end)
