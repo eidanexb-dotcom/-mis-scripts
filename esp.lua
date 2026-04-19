@@ -1,5 +1,5 @@
 --[[
-	✴ CLAUDEX v3.11
+	✴ CLAUDEX v3.12
 	Por: Eidanex & Claude
 	ScriptBlox: scriptblox.com
 ]]--
@@ -47,7 +47,7 @@ do
 	function _AT.protectTable(t)
 		return _ref.setmt(t, {
 			__metatable = _lockMsg,
-		})
+		}	)
 	end
 
 	function _AT.protectReadOnly(t)
@@ -580,6 +580,7 @@ local function _doRST()
 			hum.Sit = false
 			hum.PlatformStand = false
 			hum.WalkSpeed = 16
+			pcall(function() hum.JumpPower = 50 end)
 			hum:SetStateEnabled(Enum.HumanoidStateType.GettingUp, true)
 			hum:SetStateEnabled(Enum.HumanoidStateType.Running, true)
 			hum:SetStateEnabled(Enum.HumanoidStateType.RunningNoPhysics, true)
@@ -1179,14 +1180,14 @@ local function _startJerk()
 			t = t + 0.35
 			if isR15 then
 				if rShoulder15 and rShoulder15.Parent then
-					rShoulder15.Transform = CFrame.Angles(math.rad(45), 0, math.rad(15))
+					rShoulder15.Transform = CFrame.Angles(math.rad(-5), 0, math.rad(12))
 				end
 				if rElbow15 and rElbow15.Parent then
-					rElbow15.Transform = CFrame.Angles(msin(t) * math.rad(50) - math.rad(30), 0, 0)
+					rElbow15.Transform = CFrame.Angles(msin(t) * math.rad(30) - math.rad(95), 0, 0)
 				end
 			else
 				if rShoulder6 and rShoulder6.Parent then
-					rShoulder6.Transform = CFrame.Angles(0, math.rad(-55) + msin(t) * math.rad(40), math.rad(15))
+					rShoulder6.Transform = CFrame.Angles(math.rad(-90) + msin(t) * math.rad(30), math.rad(-25), math.rad(10))
 				end
 			end
 		end)
@@ -1641,6 +1642,25 @@ end
 _fcb = _dbtn("FREE CAM: OFF", 3, 3)
 
 do
+local _fcOrigWS, _fcOrigJP, _fcHum
+local function _freezeChar()
+	local char = LP.Character
+	if not char then return end
+	_fcHum = char:FindFirstChildOfClass("Humanoid")
+	if _fcHum then
+		_fcOrigWS = _fcHum.WalkSpeed
+		_fcOrigJP = _fcHum.JumpPower
+		pcall(function() _fcHum.WalkSpeed = 0 end)
+		pcall(function() _fcHum.JumpPower = 0 end)
+	end
+end
+local function _unfreezeChar()
+	if _fcHum and _fcHum.Parent then
+		pcall(function() _fcHum.WalkSpeed = _fcOrigWS or 16 end)
+		pcall(function() _fcHum.JumpPower = _fcOrigJP or 50 end)
+	end
+	_fcHum = nil
+end
 local function _toggleFreeCam()
 	_freeCam = not _freeCam
 	_fcb.Text = _freeCam and "FREE CAM: ON" or "FREE CAM: OFF"
@@ -1657,8 +1677,12 @@ local function _toggleFreeCam()
 		_fcPart.Parent = workspace
 		cam.CameraType = Enum.CameraType.Custom
 		cam.CameraSubject = _fcPart
+		_freezeChar()
 		_fcCon = RS.RenderStepped:Connect(function(dt)
 			if not _freeCam or not _fcPart then return end
+			if _fcHum and _fcHum.Parent then
+				pcall(function() _fcHum:Move(V3_ZERO, false) end)
+			end
 			local c = workspace.CurrentCamera
 			local mv = V3_ZERO
 			if UIS:IsKeyDown(Enum.KeyCode.W) then mv = mv + c.CFrame.LookVector end
@@ -1672,6 +1696,7 @@ local function _toggleFreeCam()
 	else
 		if _fcCon then _fcCon:Disconnect(); _fcCon = nil end
 		if _fcPart then pcall(function() _fcPart:Destroy() end); _fcPart = nil end
+		_unfreezeChar()
 		pcall(function()
 			local cam = workspace.CurrentCamera
 			cam.CameraType = Enum.CameraType.Custom
