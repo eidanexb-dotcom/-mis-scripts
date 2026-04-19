@@ -1,5 +1,5 @@
 --[[
-	✴ CLAUDEX v3.10
+	✴ CLAUDEX v3.11
 	Por: Eidanex & Claude
 	ScriptBlox: scriptblox.com
 ]]--
@@ -1568,6 +1568,7 @@ _fpbb.MouseButton1Click:Connect(_toggleFpsBoost)
 -- ANTI-TOUCH (inmunidad a killbricks y trampas)
 _atb = _dbtn("ANTI-TOUCH: OFF", 3, 2)
 
+do
 local function _toggleAntiTouch()
 	_antiTouch = not _antiTouch
 	_atb.Text = _antiTouch and "ANTI-TOUCH: ON" or "ANTI-TOUCH: OFF"
@@ -1592,10 +1593,12 @@ local function _toggleAntiTouch()
 	end
 end
 _atb.MouseButton1Click:Connect(_toggleAntiTouch)
+end
 
 -- X-RAY (paredes transparentes)
 _xrb = _dbtn("X-RAY: OFF", 2, 4)
 
+do
 local function _toggleXray()
 	_xray = not _xray
 	_xrb.Text = _xray and "X-RAY: ON" or "X-RAY: OFF"
@@ -1632,10 +1635,12 @@ local function _toggleXray()
 	end
 end
 _xrb.MouseButton1Click:Connect(_toggleXray)
+end
 
 -- FREE CAM (camara libre para espiar)
 _fcb = _dbtn("FREE CAM: OFF", 3, 3)
 
+do
 local function _toggleFreeCam()
 	_freeCam = not _freeCam
 	_fcb.Text = _freeCam and "FREE CAM: ON" or "FREE CAM: OFF"
@@ -1676,10 +1681,12 @@ local function _toggleFreeCam()
 	end
 end
 _fcb.MouseButton1Click:Connect(_toggleFreeCam)
+end
 
 -- ANTI-AFK (no te kickean por inactividad)
 _afkb = _dbtn("ANTI-AFK: OFF", 7, 1)
 
+do
 local function _toggleAntiAfk()
 	_antiAfk = not _antiAfk
 	_afkb.Text = _antiAfk and "ANTI-AFK: ON" or "ANTI-AFK: OFF"
@@ -1709,6 +1716,7 @@ local function _toggleAntiAfk()
 	end
 end
 _afkb.MouseButton1Click:Connect(_toggleAntiAfk)
+end
 
 -- ESP + TP toggle (prende/apaga highlights, billboards y boton TP lateral)
 local _espTpBtn = _dbtn("ESP+TP: ON", 8, 1)
