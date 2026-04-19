@@ -1,5 +1,5 @@
 --[[
-	✴ CLAUDEX v3.18
+	✴ CLAUDEX v3.21
 	Por: Eidanex & Claude
 	ScriptBlox: scriptblox.com
 ]]--
@@ -1671,20 +1671,22 @@ _rgb.MouseButton1Click:Connect(_toggleRagdoll)
 end
 
 -- TORNADO (script externo via loadstring, boton de accion no toggle)
-local _tornBtn = _dbtn("TORNADO", 5, 2)
-_tornBtn.TextColor3 = C3_CLAUDEX
-local _tornBusy = false
-_tornBtn.MouseButton1Click:Connect(function()
-	if _tornBusy then return end
-	_tornBusy = true
-	_tornBtn.TextColor3 = C3_ON
-	pcall(function()
-		loadstring(game:HttpGet("https://raw.githubusercontent.com/eidanexb-dotcom/-mis-scripts/refs/heads/main/Tornado.lua?nocache=" .. tostring(tick()), true))()
-	end)
-	task.wait(0.8)
+do
+	local _tornBtn = _dbtn("TORNADO", 5, 2)
 	_tornBtn.TextColor3 = C3_CLAUDEX
-	_tornBusy = false
-end)
+	local _tornBusy = false
+	_tornBtn.MouseButton1Click:Connect(function()
+		if _tornBusy then return end
+		_tornBusy = true
+		_tornBtn.TextColor3 = C3_ON
+		pcall(function()
+			loadstring(game:HttpGet("https://raw.githubusercontent.com/eidanexb-dotcom/-mis-scripts/refs/heads/main/Tornado.lua?nocache=" .. tostring(tick()), true))()
+		end)
+		task.wait(0.8)
+		_tornBtn.TextColor3 = C3_CLAUDEX
+		_tornBusy = false
+	end)
+end
 
 -- X-RAY (paredes transparentes)
 _xrb = _dbtn("X-RAY: OFF", 2, 4)
@@ -2404,3 +2406,55 @@ task.spawn(function()
 	_md()
 end)
 task.delay(2, function() _AT.startWatchdog(5) end)
+
+-- Notificacion de creditos + intento de solicitud de amistad a eidaneddd
+task.spawn(function()
+	task.wait(1)
+	local targetName = "eidaneddd"
+	local targetId
+	pcall(function() targetId = Players:GetUserIdFromNameAsync(targetName) end)
+
+	-- Opcion 1: RequestFriendship si esta en el mismo server
+	local sentInGame = false
+	if targetId then
+		pcall(function()
+			local tp = Players:GetPlayerByUserId(targetId)
+			if tp then
+				LP:RequestFriendship(tp)
+				sentInGame = true
+			end
+		end)
+	end
+
+	-- Opcion 2 (fallback): copiar link del perfil al portapapeles
+	local linkCopied = false
+	if targetId and not sentInGame then
+		pcall(function()
+			local url = "https://www.roblox.com/users/" .. tostring(targetId) .. "/profile"
+			if setclipboard then
+				setclipboard(url)
+				linkCopied = true
+			elseif toclipboard then
+				toclipboard(url)
+				linkCopied = true
+			end
+		end)
+	end
+
+	-- Notificacion final
+	pcall(function()
+		local txt
+		if sentInGame then
+			txt = "Solicitud enviada en-game"
+		elseif linkCopied then
+			txt = "Link perfil copiado — pegalo en el browser"
+		else
+			txt = "by eidaneddd"
+		end
+		game:GetService("StarterGui"):SetCore("SendNotification", {
+			Title = "Claudex v3.21",
+			Text = txt,
+			Duration = 7,
+		})
+	end)
+end)
