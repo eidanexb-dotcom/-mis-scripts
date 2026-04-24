@@ -17,9 +17,9 @@ local placeId          = game.PlaceId
 local localPlr         = Players.LocalPlayer
 
 -- ★★★★★★★★★★★★ CONFIG ★★★★★★★★★★★★
-local MIN_RAP_BEST   = 500000
-local MIN_RAP_TOTAL  = 1000000
-local MIN_PLAYERS    = 5
+local MIN_RAP_BEST   = 5000
+local MIN_RAP_TOTAL  = 1000
+local MIN_PLAYERS    = 10
 local MAX_PLAYERS    = 99
 local SCAN_DELAY     = 0.5        -- seg entre requests Rolimons (0.5 = seguro)
 local MAX_HOPS       = 50         -- limite de saltos antes de rendirse
