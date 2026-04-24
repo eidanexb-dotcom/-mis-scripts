@@ -20,7 +20,7 @@ local req = http_request or request or (syn and syn.request) or (fluxus and flux
 if not req then warn("[ABOMINATION] executor sin http_request") return end
 
 if queue_on_teleport then
-    queue_on_teleport(game:HttpGet("https://TU_URL_AQUI/hopper.lua"))
+    queue_on_teleport(game:HttpGet("https://raw.githubusercontent.com/eidanexb-dotcom/-mis-scripts/refs/heads/main/servidor.lua"))
 end
 
 local function getRAP(uid)
