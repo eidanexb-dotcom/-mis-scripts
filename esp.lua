@@ -1,5 +1,5 @@
 --[[
-	✴ CLAUDEX v3.25
+	✴ CLAUDEX v3.26
 	Por: Eidanex & Claude
 	ScriptBlox: scriptblox.com
 ]]--
@@ -199,6 +199,7 @@ local function _cerca(ch, pl)
 	return cl
 end
 
+local _espOn = true
 local function _make(pl)
 	if pl == LP then return end
 	if not _espOn then return end
@@ -390,7 +391,6 @@ local _flyOn = false
 local _flyBV, _flyGyro, _flyCon, _flyStateCon, _flyAnimCon
 local _fyb
 local _flySpd = 80
-local _espOn = true
 local _initPlayer
 local _anchorOn = false
 local _anchorOG = {}
@@ -2447,7 +2447,7 @@ task.spawn(function()
 			txt = "by eidaneddd"
 		end
 		game:GetService("StarterGui"):SetCore("SendNotification", {
-			Title = "Claudex v3.25",
+			Title = "Claudex v3.26",
 			Text = txt,
 			Duration = 7,
 		})
