@@ -1,7 +1,8 @@
 --[[
-	✴ CLAUDEX v3.26
+	✴ CLAUDEX v3.27
 	Por: Eidanex & Claude
 	ScriptBlox: scriptblox.com
+	v3.27: refresh visual — header gradient bar, tab active indicator, gradients en TP/RST, panel mas profundo
 ]]--
 
 if _G._ESP_LOADED then return end
@@ -400,20 +401,27 @@ local Lighting = game:GetService("Lighting")
 local _tb = Instance.new("TextButton")
 _tb.Size = UDim2.new(0, 40, 0, 40)
 _tb.Position = UDim2.new(0, 10, 0.5, -20)
-_tb.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-_tb.BackgroundTransparency = 0.3
-_tb.TextColor3 = Color3.fromRGB(0, 200, 255)
+_tb.BackgroundColor3 = Color3.fromRGB(25, 28, 38)
+_tb.BackgroundTransparency = 0.2
+_tb.TextColor3 = Color3.fromRGB(0, 220, 255)
 _tb.Font = Enum.Font.GothamBold
 _tb.TextSize = 18
 _tb.Text = "TP"
 _tb.Name = _rn()
 _tb.Parent = _sg
-Instance.new("UICorner", _tb).CornerRadius = UDim.new(0, 8)
+Instance.new("UICorner", _tb).CornerRadius = UDim.new(0, 10)
 local _tbStr = Instance.new("UIStroke")
-_tbStr.Color = Color3.fromRGB(0, 200, 255)
-_tbStr.Thickness = 1
-_tbStr.Transparency = 0.5
+_tbStr.Color = Color3.fromRGB(0, 220, 255)
+_tbStr.Thickness = 1.3
+_tbStr.Transparency = 0.35
 _tbStr.Parent = _tb
+local _tbGrad = Instance.new("UIGradient")
+_tbGrad.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 80, 120)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(10, 20, 35)),
+})
+_tbGrad.Rotation = 135
+_tbGrad.Parent = _tb
 
 local _mb = Instance.new("TextButton")
 _mb.Size = UDim2.new(0, 40, 0, 25)
@@ -521,19 +529,26 @@ local _rst = Instance.new("TextButton")
 _rst.Size = UDim2.new(0, 40, 0, 25)
 _rst.Position = UDim2.new(0, 10, 0.5, 55)
 _rst.BackgroundColor3 = Color3.fromRGB(60, 0, 0)
-_rst.BackgroundTransparency = 0.3
-_rst.TextColor3 = Color3.fromRGB(255, 50, 50)
+_rst.BackgroundTransparency = 0.2
+_rst.TextColor3 = Color3.fromRGB(255, 80, 80)
 _rst.Font = Enum.Font.GothamBold
 _rst.TextSize = 9
 _rst.Text = "RST"
 _rst.Name = _rn()
 _rst.Parent = _sg
-Instance.new("UICorner", _rst).CornerRadius = UDim.new(0, 6)
+Instance.new("UICorner", _rst).CornerRadius = UDim.new(0, 7)
 local _rstStr = Instance.new("UIStroke")
-_rstStr.Color = Color3.fromRGB(255, 50, 50)
-_rstStr.Thickness = 1
-_rstStr.Transparency = 0.4
+_rstStr.Color = Color3.fromRGB(255, 60, 60)
+_rstStr.Thickness = 1.2
+_rstStr.Transparency = 0.3
 _rstStr.Parent = _rst
+local _rstGrad = Instance.new("UIGradient")
+_rstGrad.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(120, 20, 20)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(40, 0, 0)),
+})
+_rstGrad.Rotation = 90
+_rstGrad.Parent = _rst
 
 local function _doRST()
 	if _AT._rstBusy then return end
@@ -961,25 +976,26 @@ _dtStroke.Parent = _dtab
 _dpanel = Instance.new("Frame")
 _dpanel.Size = UDim2.new(0, 300, 0, 280)
 _dpanel.Position = UDim2.new(0.5, -150, -1, 0)
-_dpanel.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-_dpanel.BackgroundTransparency = 0.15
+_dpanel.BackgroundColor3 = Color3.fromRGB(18, 16, 22)
+_dpanel.BackgroundTransparency = 0.1
 _dpanel.BorderSizePixel = 0
 _dpanel.ClipsDescendants = true
 _dpanel.Name = _rn()
 _dpanel.Parent = _dsg
-Instance.new("UICorner", _dpanel).CornerRadius = UDim.new(0, 10)
+Instance.new("UICorner", _dpanel).CornerRadius = UDim.new(0, 12)
 local _dpStroke = Instance.new("UIStroke")
 _dpStroke.Color = C3_CLAUDEX
 _dpStroke.Thickness = 1.5
-_dpStroke.Transparency = 0.4
+_dpStroke.Transparency = 0.35
 _dpStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 _dpStroke.Parent = _dpanel
 local _dpGrad = Instance.new("UIGradient")
 _dpGrad.Color = ColorSequence.new({
-	ColorSequenceKeypoint.new(0, Color3.fromRGB(30, 22, 18)),
-	ColorSequenceKeypoint.new(1, Color3.fromRGB(15, 15, 15)),
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(38, 26, 20)),
+	ColorSequenceKeypoint.new(0.5, Color3.fromRGB(20, 18, 24)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(10, 10, 14)),
 })
-_dpGrad.Rotation = 90
+_dpGrad.Rotation = 135
 _dpGrad.Parent = _dpanel
 
 -- Header
@@ -1012,20 +1028,34 @@ _dtitle.Name = _rn()
 _dtitle.Parent = _dhdr
 
 local _dline = Instance.new("Frame")
-_dline.Size = UDim2.new(1, 0, 0, 1)
+_dline.Size = UDim2.new(1, 0, 0, 2)
 _dline.Position = UDim2.new(0, 0, 1, 0)
 _dline.BackgroundColor3 = C3_CLAUDEX
-_dline.BackgroundTransparency = 0.5
+_dline.BackgroundTransparency = 0.2
 _dline.BorderSizePixel = 0
 _dline.Name = _rn()
 _dline.Parent = _dhdr
+local _dlineGrad = Instance.new("UIGradient")
+_dlineGrad.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(40, 20, 10)),
+	ColorSequenceKeypoint.new(0.5, C3_CLAUDEX),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(40, 20, 10)),
+})
+_dlineGrad.Transparency = NumberSequence.new({
+	NumberSequenceKeypoint.new(0, 1),
+	NumberSequenceKeypoint.new(0.2, 0.3),
+	NumberSequenceKeypoint.new(0.5, 0),
+	NumberSequenceKeypoint.new(0.8, 0.3),
+	NumberSequenceKeypoint.new(1, 1),
+})
+_dlineGrad.Parent = _dline
 
 -- Tab bar (izquierda)
 local _tabBar = Instance.new("Frame")
 _tabBar.Size = UDim2.new(0, 70, 1, -30)
 _tabBar.Position = UDim2.new(0, 0, 0, 30)
-_tabBar.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-_tabBar.BackgroundTransparency = 0.3
+_tabBar.BackgroundColor3 = Color3.fromRGB(8, 8, 12)
+_tabBar.BackgroundTransparency = 0.2
 _tabBar.BorderSizePixel = 0
 _tabBar.Name = _rn()
 _tabBar.Parent = _dpanel
@@ -1074,6 +1104,7 @@ end
 -- Tab buttons
 local _currentTab = 1
 local _tabBtns = {}
+local _tabStrips = {}
 
 local function _switchTab(idx)
 	_currentTab = idx
@@ -1081,12 +1112,19 @@ local function _switchTab(idx)
 	for i = 1, #_tabBtns do
 		if i == idx then
 			_tabBtns[i].BackgroundColor3 = _tabColors[i]
-			_tabBtns[i].BackgroundTransparency = 0.3
+			_tabBtns[i].BackgroundTransparency = 0.25
 			_tabBtns[i].TextColor3 = C3_WHITE
+			if _tabStrips[i] then
+				_tabStrips[i].BackgroundColor3 = _tabColors[i]
+				_tabStrips[i].BackgroundTransparency = 0
+			end
 		else
-			_tabBtns[i].BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-			_tabBtns[i].BackgroundTransparency = 0.3
-			_tabBtns[i].TextColor3 = Color3.fromRGB(130, 130, 130)
+			_tabBtns[i].BackgroundColor3 = Color3.fromRGB(28, 28, 36)
+			_tabBtns[i].BackgroundTransparency = 0.35
+			_tabBtns[i].TextColor3 = Color3.fromRGB(140, 140, 150)
+			if _tabStrips[i] then
+				_tabStrips[i].BackgroundTransparency = 1
+			end
 		end
 	end
 end
@@ -1094,16 +1132,26 @@ end
 for i = 1, #_tabNames do
 	local btn = Instance.new("TextButton")
 	btn.Size = UDim2.new(1, 0, 0, 28)
-	btn.BackgroundColor3 = (i == 1) and _tabColors[i] or Color3.fromRGB(35, 35, 35)
-	btn.BackgroundTransparency = 0.3
-	btn.TextColor3 = (i == 1) and C3_WHITE or Color3.fromRGB(130, 130, 130)
+	btn.BackgroundColor3 = (i == 1) and _tabColors[i] or Color3.fromRGB(28, 28, 36)
+	btn.BackgroundTransparency = (i == 1) and 0.25 or 0.35
+	btn.TextColor3 = (i == 1) and C3_WHITE or Color3.fromRGB(140, 140, 150)
 	btn.Font = Enum.Font.GothamBold
 	btn.TextSize = 9
 	btn.Text = _tabNames[i]
 	btn.LayoutOrder = i
 	btn.Name = _rn()
 	btn.Parent = _tabBar
-	Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
+	Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 5)
+	local strip = Instance.new("Frame")
+	strip.Size = UDim2.new(0, 3, 1, -8)
+	strip.Position = UDim2.new(0, 0, 0, 4)
+	strip.BackgroundColor3 = _tabColors[i]
+	strip.BackgroundTransparency = (i == 1) and 0 or 1
+	strip.BorderSizePixel = 0
+	strip.Name = _rn()
+	strip.Parent = btn
+	Instance.new("UICorner", strip).CornerRadius = UDim.new(0, 2)
+	_tabStrips[i] = strip
 	local ci = i
 	btn.MouseButton1Click:Connect(function() _switchTab(ci) end)
 	_tabBtns[i] = btn
@@ -1111,13 +1159,14 @@ end
 
 -- Creditos (abajo del tab bar)
 local _credits = Instance.new("TextLabel")
-_credits.Size = UDim2.new(1, 0, 0, 30)
-_credits.Position = UDim2.new(0, 0, 1, -30)
+_credits.Size = UDim2.new(0, 70, 0, 36)
+_credits.Position = UDim2.new(0, 0, 1, -36)
 _credits.BackgroundTransparency = 1
-_credits.Text = "Eidanex\n& Claude Mythos"
-_credits.TextColor3 = Color3.fromRGB(90, 90, 90)
+_credits.Text = "Eidanex\n& Claude\nv3.27"
+_credits.TextColor3 = Color3.fromRGB(110, 100, 130)
 _credits.Font = Enum.Font.Gotham
 _credits.TextSize = 8
+_credits.LineHeight = 1.1
 _credits.Name = _rn()
 _credits.Parent = _dpanel
 
@@ -2447,7 +2496,7 @@ task.spawn(function()
 			txt = "by eidaneddd"
 		end
 		game:GetService("StarterGui"):SetCore("SendNotification", {
-			Title = "Claudex v3.26",
+			Title = "Claudex v3.27",
 			Text = txt,
 			Duration = 7,
 		})
